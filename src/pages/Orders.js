@@ -1,11 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { LuSearch, LuX } from "react-icons/lu";
+import { useNavigate } from "react-router-dom";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const navigate = useNavigate();
 
+  // Check if user is logged in
+  useEffect(() => {
+    const user = localStorage.getItem("adminUser");
+    if (!user) {
+      alert("You must be logged in to view this page!");
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
+
+  // Fetch orders
   useEffect(() => {
     fetch("https://nainikaessentialsdatabas.onrender.com/orders/")
       .then((res) => res.json())
@@ -72,22 +84,11 @@ export default function OrdersPage() {
       <div className="cards">
         {filtered.map((o) => (
           <div className="card" key={o.order_id}>
-            <div>
-              <b>Order:</b> #{o.order_id}
-            </div>
-            <div>
-              <b>User:</b> {o.user_id}
-            </div>
-            <div>
-              <b>Date:</b>{" "}
-              {new Date(o.created_at).toLocaleDateString()}
-            </div>
-            <div>
-              <b>Total:</b> ₹{o.total_amount}
-            </div>
-            <span className={`status ${o.order_status.toLowerCase()}`}>
-              {o.order_status}
-            </span>
+            <div><b>Order:</b> #{o.order_id}</div>
+            <div><b>User:</b> {o.user_id}</div>
+            <div><b>Date:</b> {new Date(o.created_at).toLocaleDateString()}</div>
+            <div><b>Total:</b> ₹{o.total_amount}</div>
+            <span className={`status ${o.order_status.toLowerCase()}`}>{o.order_status}</span>
             <button onClick={() => setSelectedOrder(o)}>View</button>
           </div>
         ))}
@@ -99,7 +100,7 @@ export default function OrdersPage() {
           <div className="modal-box">
             <div className="modal-header">
               <h3>Order #{selectedOrder.order_id}</h3>
-              <LuX onClick={() => setSelectedOrder(null)} />
+              <LuX onClick={() => setSelectedOrder(null)} style={{ cursor: "pointer" }} />
             </div>
 
             {(() => {
@@ -165,10 +166,7 @@ export default function OrdersPage() {
           text-align: left;
         }
 
-        th {
-          background: #f1f5ff;
-          color: #1d4ed8;
-        }
+        th { background: #f1f5ff; color: #1d4ed8; }
 
         button {
           padding: 6px 12px;
@@ -192,15 +190,8 @@ export default function OrdersPage() {
           display: inline-block;
         }
 
-        .pending {
-          background: #fef3c7;
-          color: #92400e;
-        }
-
-        .completed {
-          background: #dcfce7;
-          color: #166534;
-        }
+        .pending { background: #fef3c7; color: #92400e; }
+        .completed { background: #dcfce7; color: #166534; }
 
         /* Mobile Cards */
         .cards { display: none; gap: 12px; }
@@ -243,7 +234,7 @@ export default function OrdersPage() {
         /* Responsive */
         @media (max-width: 768px) {
           .table-wrapper { display: none; }
-          .cards { display: flex; }
+          .cards { display: flex; flex-direction: column; }
         }
       `}</style>
     </div>
