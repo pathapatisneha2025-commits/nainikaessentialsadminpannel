@@ -54,7 +54,10 @@ export default function AdminInventory() {
     setNewCategory("");
   };
 
-  const handleSetActiveCategory = (cat) => setActiveCategory(cat);
+  const handleSetActiveCategory = (cat) => {
+    setProduct(emptyProduct);
+    setActiveCategory(cat);
+  };
 
   const handleMainImage = (e) => {
     const file = e.target.files[0];
@@ -83,7 +86,6 @@ export default function AdminInventory() {
 
   const saveProduct = async () => {
     if (!activeCategory) return;
-
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("category", activeCategory.name);
@@ -94,61 +96,37 @@ export default function AdminInventory() {
     try {
       setLoading(true);
       const res = await fetch(`${BASE_URL}/add`, { method: "POST", body: formData });
-      const data = await res.json();
-
       if (res.ok) {
-        alert("Product added successfully!");
-        setCategories(
-          categories.map((c) =>
-            c.id === activeCategory.id
-              ? { ...c, products: [...c.products, data.product] }
-              : c
-          )
-        );
-        setProduct(emptyProduct);
-      } else {
-        alert(data.error || "Error adding product");
+        alert("Product saved!");
+        window.location.reload(); 
       }
     } catch (err) {
       console.error(err);
-      alert("Server error");
     } finally {
       setLoading(false);
     }
   };
 
   const deleteProduct = async (productId) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
+    if (!window.confirm("Delete this product?")) return;
     try {
       setLoading(true);
-      const res = await fetch(`${BASE_URL}/delete/${productId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (res.ok) {
-        alert("Product deleted!");
-        setCategories(
-          categories.map((c) =>
-            c.id === activeCategory.id
-              ? { ...c, products: c.products.filter((p) => p.id !== productId) }
-              : c
-          )
-        );
-      } else {
-        alert(data.error || "Error deleting product");
-      }
+      await fetch(`${BASE_URL}/delete/${productId}`, { method: "DELETE" });
+      window.location.reload();
     } catch (err) {
       console.error(err);
-      alert("Server error");
     } finally {
       setLoading(false);
     }
   };
 
   const updateProduct = (prod) => {
-    setActiveCategory(categories.find((c) => c.name === prod.category));
+    const cat = categories.find((c) => c.name === prod.category);
+    setActiveCategory(cat);
     setProduct({
       name: prod.name,
       mainImage: { url: prod.main_image },
-      thumbnails: prod.thumbnails.map((t) => ({ url: t })),
+      thumbnails: prod.thumbnails ? prod.thumbnails.map((t) => ({ url: t })) : [],
       variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
     });
   };
@@ -157,19 +135,18 @@ export default function AdminInventory() {
     <div className="admin">
       <h1>Inventory Management</h1>
 
-      {/* ADD CATEGORY */}
-      <div className="add-category">
-        <input
-          placeholder="Add Category"
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
-        />
-        <button className="add-category-btn" onClick={addCategory}>➕ Add Category</button>
+      <div className="add-category-section">
+        <div className="add-category">
+          <input
+            placeholder="Add New Category"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+          />
+          <button className="add-category-btn" onClick={addCategory}>➕ Add</button>
+        </div>
       </div>
 
-      {/* CATEGORY CARDS */}
       <div className="category-grid">
-        {categories.length === 0 && <p>No categories available</p>}
         {categories.map((cat) => (
           <div key={cat.id} className="category-card" onClick={() => handleSetActiveCategory(cat)}>
             {cat.name}
@@ -177,7 +154,6 @@ export default function AdminInventory() {
         ))}
       </div>
 
-      {/* PRODUCT TABLE */}
       <h2>All Products</h2>
       <div className="table-wrapper">
         <table className="product-table">
@@ -192,135 +168,108 @@ export default function AdminInventory() {
             </tr>
           </thead>
           <tbody>
-            {allProducts.length > 0 ? (
-              allProducts.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.categoryName}</td>
-                  <td>{p.name}</td>
-                  <td>{p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}</td>
-                  <td className="thumbs">{p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}</td>
-                  <td>{p.variants?.map((v, i) => <div key={i}>{v.size}/{v.color} - ₹{v.price} ({v.stock})</div>)}</td>
-                  <td>
-                    <button className="update-btn" onClick={() => updateProduct(p)}>Update</button>
-                    <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr><td colSpan={6}>No products available</td></tr>
-            )}
+            {allProducts.map((p) => (
+              <tr key={p.id}>
+                <td>{p.categoryName}</td>
+                <td>{p.name}</td>
+                <td>{p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}</td>
+                <td className="thumbs">{p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}</td>
+                <td>
+                  {p.variants?.map((v, i) => (
+                    <div key={i} className="variant-tag">{v.size}/{v.color} - ₹{v.price}</div>
+                  ))}
+                </td>
+                <td className="action-cells">
+                  <button className="update-btn" onClick={() => updateProduct(p)}>Update</button>
+                  <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      {/* MODAL */}
       {activeCategory && (
-        <div className="modal">
+        <div className="modal-overlay">
           <div className="modal-box">
-            <h3>{product.name ? "Update Product" : "Add Product"} in {activeCategory.name}</h3>
-
-            <input
-              placeholder="Product Name"
-              value={product.name}
-              onChange={(e) => setProduct({ ...product, name: e.target.value })}
-            />
-
-            <h4>Main Image</h4>
-            <label className="upload-btn">
-              Upload Main Image
-              <input type="file" onChange={handleMainImage} hidden />
-            </label>
-            {product.mainImage && <img src={product.mainImage.url} className="main-image" alt="main" />}
-
-            <h4>Thumbnails</h4>
-            <label className="upload-btn secondary">
-              Upload Thumbnails
-              <input type="file" multiple onChange={handleThumbnails} hidden />
-            </label>
-            <div className="thumb-preview">
-              {product.thumbnails.map((img, i) => <img key={i} src={img.url} alt="thumb" />)}
+            <div className="modal-header">
+              <h3>{product.name ? "Update" : "Add"} Product</h3>
+              <button className="close-x" onClick={() => setActiveCategory(null)}>&times;</button>
             </div>
-
-            <h4>Variants</h4>
-            {product.variants.map((v, i) => (
-              <div key={i} className="variant">
-                <select onChange={(e) => updateVariant(i, "size", e.target.value)}>
-                  <option value="">Size</option>
-                  <option>S</option>
-                  <option>M</option>
-                  <option>L</option>
-                  <option>XL</option>
-                </select>
-                <input placeholder="Color" onChange={(e) => updateVariant(i, "color", e.target.value)} />
-                <input type="number" placeholder="Price" onChange={(e) => updateVariant(i, "price", e.target.value)} />
-                <input type="number" placeholder="Stock" onChange={(e) => updateVariant(i, "stock", e.target.value)} />
+            <div className="modal-body">
+              <input className="full-input" placeholder="Product Name" value={product.name} onChange={(e) => setProduct({ ...product, name: e.target.value })} />
+              <div className="upload-section">
+                <div>
+                  <h4>Main Image</h4>
+                  <label className="custom-upload"><input type="file" onChange={handleMainImage} hidden />Choose File</label>
+                  {product.mainImage && <img src={product.mainImage.url} className="preview-img-main" />}
+                </div>
+                <div>
+                  <h4>Thumbnails</h4>
+                  <label className="custom-upload"><input type="file" multiple onChange={handleThumbnails} hidden />Choose Files</label>
+                  <div className="thumb-preview">{product.thumbnails.map((img, i) => <img key={i} src={img.url} />)}</div>
+                </div>
               </div>
-            ))}
-            <button onClick={addVariant} className="add-variant-btn">+ Add Size / Color</button>
-            <button className="save" onClick={saveProduct} disabled={loading}>{loading ? "Saving..." : "Save Product"}</button>
-
-            <button className="close" onClick={() => setActiveCategory(null)}>Close</button>
+              <h4>Variants</h4>
+              {product.variants.map((v, i) => (
+                <div key={i} className="variant-row">
+                  <select value={v.size} onChange={(e) => updateVariant(i, "size", e.target.value)}>
+                    <option value="">Size</option><option>S</option><option>M</option><option>L</option><option>XL</option>
+                  </select>
+                  <input placeholder="Color" value={v.color} onChange={(e) => updateVariant(i, "color", e.target.value)} />
+                  <input type="number" placeholder="Price" value={v.price} onChange={(e) => updateVariant(i, "price", e.target.value)} />
+                  <input type="number" placeholder="Stock" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} />
+                </div>
+              ))}
+              <button onClick={addVariant} className="add-variant-btn">+ Add Variant</button>
+              <button className="save-btn" onClick={saveProduct} disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* STYLES */}
       <style>{`
-        .admin { padding:20px; font-family:Arial,sans-serif; }
-        h1 { color:#0b5ed7; text-align:center; }
+        .admin { padding: 20px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: #f8fafc; }
+        h1 { color: #0b5ed7; text-align: center; }
+        .add-category { display: flex; gap: 10px; margin-bottom: 20px; }
+        .add-category input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
+        .add-category button { background: #0b5ed7; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .category-card { background: #fff; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; font-weight: bold; }
+        
+        .table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 12px; margin-top: 20px; border: 1px solid #eee; }
+        .product-table { width: 100%; min-width: 900px; border-collapse: collapse; }
+        .product-table th, .product-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        .mini-main { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
+        .thumbs img { width: 30px; height: 30px; margin-right: 4px; border-radius: 3px; }
+        .variant-tag { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin: 2px; display: inline-block; }
 
-        .add-category { display:flex; gap:10px; flex-wrap:wrap; }
-        .add-category input { flex:1; padding:10px; border-radius:8px; border:1px solid #cbd5e1; }
-        .add-category button { background:#0b5ed7; color:white; border:none; border-radius:8px; padding:10px 16px; font-weight:bold; cursor:pointer; }
+        .update-btn { background: #0b5ed7; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
+        .delete-btn { background: #ef4444; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
-        .category-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:15px; }
-        .category-card { background:#fff; padding:20px; border-radius:14px; text-align:center; cursor:pointer; box-shadow:0 8px 16px rgba(0,0,0,.1); font-weight:bold; transition: transform 0.2s; }
-        .category-card:hover { transform:translateY(-3px); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-box { background: #fff; width: 100%; max-width: 700px; padding: 25px; border-radius: 12px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .full-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
+        .custom-upload { display: block; background: #f1f5f9; padding: 10px; text-align: center; border: 1px dashed #cbd5e1; border-radius: 6px; cursor: pointer; }
+        .preview-img-main { width: 100px; height: 100px; object-fit: cover; margin-top: 10px; border-radius: 6px; }
+        .thumb-preview { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+        .thumb-preview img { width: 40px; height: 40px; border-radius: 4px; }
 
-        /* TABLE SCROLL ONLY */
-        .table-wrapper { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-        .product-table { width:100%; min-width:900px; border-collapse:collapse; }
-        .product-table th, .product-table td { border:1px solid #ddd; padding:8px; white-space:nowrap; text-align:left; }
-        .product-table th { background-color:#f3f4f6; }
-        .mini-main { width:60px; height:60px; object-fit:cover; border-radius:6px; }
-        .thumbs img, .thumb-preview img { width:40px; height:40px; object-fit:cover; border-radius:4px; margin-right:4px; }
+        .variant-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        .variant-row input, .variant-row select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        .add-variant-btn { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #0b5ed7; color: #0b5ed7; background: #fff; border-radius: 6px; cursor: pointer; }
+        .save-btn { width: 100%; padding: 12px; background: #0b5ed7; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
 
-        .update-btn, .delete-btn, .add-variant-btn, .save, .close { border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer; border:none; }
-        .update-btn, .add-variant-btn, .save { background:#0b5ed7; color:#fff; }
-        .delete-btn, .close { background:#ef4444; color:#fff; }
-
-        .modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:10px; }
-        .modal-box { background:white; width:100%; max-width:550px; max-height:90vh; overflow-y:auto; padding:20px; border-radius:16px; }
-        .main-image { width:100%; max-width:200px; max-height:150px; object-fit:contain; display:block; margin:0 auto 10px; border-radius:12px; }
-
-        .variant { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
-        input, select { padding:8px; border-radius:6px; border:1px solid #cbd5e1; }
-
-        /* MOBILE */
-        @media (max-width:768px){
-          h1 { font-size:1.2rem; }
-
-          .add-category { flex-direction: column; gap:6px; }
-          .add-category input { font-size:14px; padding:6px; }
-          .add-category button { width:100%; font-size:14px; padding:8px; }
-
-          .category-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
-          .category-card { padding:14px; font-size:14px; }
-
-          .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-          .product-table th, .product-table td { font-size:10px; padding:4px; }
-          .mini-main { width:30px; height:30px; }
-          .thumbs img, .thumb-preview img { width:24px; height:24px; }
-
-          .update-btn, .delete-btn, .add-variant-btn, .save, .close { padding:4px 6px; font-size:10px; }
-
-          .modal-box { width:95vw; max-width:400px; max-height:90vh; padding:12px; overflow-y:auto; }
-          .modal-box h3 { font-size:1rem; }
-          .modal-box h4 { font-size:0.85rem; margin-top:8px; }
-          input, select { padding:6px; font-size:12px; }
-          .main-image { max-width:120px; max-height:100px; }
-
-          .variant { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+        @media (max-width: 768px) {
+          .variant-row { grid-template-columns: 1fr 1fr; }
+          .upload-section { grid-template-columns: 1fr; }
+          .modal-overlay { align-items: flex-end; padding: 0; }
+          .modal-box { border-radius: 20px 20px 0 0; }
         }
       `}</style>
     </div>
