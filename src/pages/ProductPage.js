@@ -253,7 +253,8 @@ const allProducts = categories.flatMap(c =>
       {/* PRODUCT TABLE */}
      {/* PRODUCT TABLE */}
 <h2>All Products</h2>
-<table className="product-table">
+<div className="table-wrapper">
+  <table className="product-table">
   <thead>
     <tr>
       <th>Category</th>
@@ -298,6 +299,7 @@ const allProducts = categories.flatMap(c =>
     )}
   </tbody>
 </table>
+</div>
 
 
       {/* MODAL FOR ADD/UPDATE PRODUCT */}
@@ -380,6 +382,82 @@ const allProducts = categories.flatMap(c =>
 }
 @media (max-width: 768px) {
   .thumb { width: 30px; height: 30px; }
+}
+/* ---------- TABLE RESPONSIVE ---------- */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.product-table {
+  min-width: 900px; /* prevents squishing */
+}
+
+/* ---------- MODAL RESPONSIVE ---------- */
+.modal-box {
+  width: 100%;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* ---------- VARIANTS RESPONSIVE ---------- */
+.variant {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* ---------- IMAGES ---------- */
+.mini-main {
+  width: 50px;
+  height: 50px;
+}
+
+.thumbs img,
+.thumb-preview img {
+  width: 36px;
+  height: 36px;
+}
+
+/* ---------- MOBILE FIX ---------- */
+@media (max-width: 768px) {
+
+  h1 {
+    font-size: 1.2rem;
+  }
+
+  .add-category {
+    flex-direction: column;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* TABLE */
+  .product-table {
+    font-size: 12px;
+  }
+
+  /* STACK VARIANTS */
+  .variant {
+    grid-template-columns: 1fr;
+  }
+
+  /* MODAL IMAGE */
+  .main-image {
+    max-width: 100%;
+    max-height: 140px;
+  }
+
+  /* BUTTONS */
+  .update-btn,
+  .delete-btn {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
 }
 
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 10px; }
