@@ -100,10 +100,7 @@ export default function AdminInventory() {
 
     try {
       setLoading(true);
-      const res = await fetch(`${BASE_URL}/add`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(`${BASE_URL}/add`, { method: "POST", body: formData });
       const data = await res.json();
 
       if (res.ok) {
@@ -335,7 +332,7 @@ export default function AdminInventory() {
 
       {/* STYLES */}
       <style>{`
-        .admin { padding: 20px; font-family: Arial,sans-serif; }
+        .admin { padding:20px; font-family:Arial,sans-serif; }
         h1 { color:#0b5ed7; text-align:center; }
 
         .add-category { display:flex; gap:10px; flex-wrap:wrap; }
@@ -346,6 +343,7 @@ export default function AdminInventory() {
         .category-card { background:#fff; padding:20px; border-radius:14px; text-align:center; cursor:pointer; box-shadow:0 8px 16px rgba(0,0,0,.1); font-weight:bold; transition: transform 0.2s; }
         .category-card:hover { transform:translateY(-3px); }
 
+        /* TABLE SCROLL ONLY */
         .table-wrapper { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
         .product-table { width:100%; min-width:900px; border-collapse:collapse; }
         .product-table th, .product-table td { border:1px solid #ddd; padding:8px; white-space:nowrap; text-align:left; }
@@ -364,6 +362,7 @@ export default function AdminInventory() {
         .variant { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
         input, select { padding:8px; border-radius:6px; border:1px solid #cbd5e1; }
 
+        /* MOBILE */
         @media (max-width:768px){
           h1 { font-size:1.2rem; }
           .add-category { flex-direction:column; }
