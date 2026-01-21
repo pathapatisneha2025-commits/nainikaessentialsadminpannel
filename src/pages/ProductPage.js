@@ -190,8 +190,8 @@ export default function AdminInventory() {
       </div>
 
       {activeCategory && (
-        <div className="modal-overlay">
-          <div className="modal-box">
+        <div className="modal-overlay" onClick={() => setActiveCategory(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{product.name ? "Update" : "Add"} Product</h3>
               <button className="close-x" onClick={() => setActiveCategory(null)}>&times;</button>
@@ -201,26 +201,28 @@ export default function AdminInventory() {
               <div className="upload-section">
                 <div>
                   <h4>Main Image</h4>
-                  <label className="custom-upload"><input type="file" onChange={handleMainImage} hidden />Choose File</label>
+                  <label className="custom-upload">Choose File<input type="file" onChange={handleMainImage} hidden /></label>
                   {product.mainImage && <img src={product.mainImage.url} className="preview-img-main" />}
                 </div>
                 <div>
                   <h4>Thumbnails</h4>
-                  <label className="custom-upload"><input type="file" multiple onChange={handleThumbnails} hidden />Choose Files</label>
+                  <label className="custom-upload">Choose Files<input type="file" multiple onChange={handleThumbnails} hidden /></label>
                   <div className="thumb-preview">{product.thumbnails.map((img, i) => <img key={i} src={img.url} />)}</div>
                 </div>
               </div>
               <h4>Variants</h4>
-              {product.variants.map((v, i) => (
-                <div key={i} className="variant-row">
-                  <select value={v.size} onChange={(e) => updateVariant(i, "size", e.target.value)}>
-                    <option value="">Size</option><option>S</option><option>M</option><option>L</option><option>XL</option>
-                  </select>
-                  <input placeholder="Color" value={v.color} onChange={(e) => updateVariant(i, "color", e.target.value)} />
-                  <input type="number" placeholder="Price" value={v.price} onChange={(e) => updateVariant(i, "price", e.target.value)} />
-                  <input type="number" placeholder="Stock" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} />
-                </div>
-              ))}
+              <div className="variants-container">
+                {product.variants.map((v, i) => (
+                    <div key={i} className="variant-row">
+                    <select value={v.size} onChange={(e) => updateVariant(i, "size", e.target.value)}>
+                        <option value="">Size</option><option>S</option><option>M</option><option>L</option><option>XL</option>
+                    </select>
+                    <input placeholder="Color" value={v.color} onChange={(e) => updateVariant(i, "color", e.target.value)} />
+                    <input type="number" placeholder="Price" value={v.price} onChange={(e) => updateVariant(i, "price", e.target.value)} />
+                    <input type="number" placeholder="Stock" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} />
+                    </div>
+                ))}
+              </div>
               <button onClick={addVariant} className="add-variant-btn">+ Add Variant</button>
               <button className="save-btn" onClick={saveProduct} disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
             </div>
@@ -229,47 +231,67 @@ export default function AdminInventory() {
       )}
 
       <style>{`
-        .admin { padding: 20px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: #f8fafc; }
-        h1 { color: #0b5ed7; text-align: center; }
-        .add-category { display: flex; gap: 10px; margin-bottom: 20px; }
-        .add-category input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 8px; }
-        .add-category button { background: #0b5ed7; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        /* --- MOBILE & DESKTOP RESET --- */
+        .admin { padding: 15px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: #f8fafc; min-height: 100vh; }
         
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .category-card { background: #fff; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; font-weight: bold; }
+        /* --- HEADER & CATEGORIES --- */
+        h1 { color: #0b5ed7; text-align: center; font-size: 1.5rem; }
+        .add-category { display: flex; gap: 8px; margin-bottom: 20px; }
+        .add-category input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
+        .add-category button { background: #0b5ed7; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; }
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        .category-card { background: #fff; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; font-weight: bold; }
+
+        /* --- TABLE (SCROLLABLE) --- */
+        .table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 12px; margin-top: 20px; -webkit-overflow-scrolling: touch; }
+        .product-table { width: 100%; min-width: 800px; border-collapse: collapse; }
+        .product-table th, .product-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .mini-main { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; }
+        .thumbs img { width: 30px; height: 30px; margin-right: 4px; border-radius: 4px; }
+        .variant-tag { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 11px; display: inline-block; margin: 2px; }
+
+        /* --- MODAL (FIXED FOR MOBILE) --- */
+        .modal-overlay { 
+          position: fixed; 
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.6); 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          z-index: 9999; /* Ensure high z-index */
+        }
+        .modal-box { 
+          background: #fff; 
+          width: 95%; 
+          max-width: 650px; 
+          max-height: 85vh; /* Don't cover full screen to allow exit */
+          padding: 20px; 
+          border-radius: 16px; 
+          overflow-y: auto; 
+          position: relative;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
+        .close-x { font-size: 30px; border: none; background: none; cursor: pointer; color: #666; }
         
-        .table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 12px; margin-top: 20px; border: 1px solid #eee; }
-        .product-table { width: 100%; min-width: 900px; border-collapse: collapse; }
-        .product-table th, .product-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-        .mini-main { width: 50px; height: 50px; object-fit: cover; border-radius: 4px; }
-        .thumbs img { width: 30px; height: 30px; margin-right: 4px; border-radius: 3px; }
-        .variant-tag { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin: 2px; display: inline-block; }
+        .full-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .custom-upload { display: block; background: #f8fafc; padding: 10px; text-align: center; border: 1px dashed #0b5ed7; border-radius: 8px; cursor: pointer; color: #0b5ed7; font-size: 14px; }
+        .preview-img-main { width: 80px; height: 80px; object-fit: cover; margin-top: 10px; border-radius: 8px; }
 
-        .update-btn { background: #0b5ed7; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 5px; }
-        .delete-btn { background: #ef4444; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .variant-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; }
+        .variant-row input, .variant-row select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .modal-box { background: #fff; width: 100%; max-width: 700px; padding: 25px; border-radius: 12px; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .full-input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        
-        .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px; }
-        .custom-upload { display: block; background: #f1f5f9; padding: 10px; text-align: center; border: 1px dashed #cbd5e1; border-radius: 6px; cursor: pointer; }
-        .preview-img-main { width: 100px; height: 100px; object-fit: cover; margin-top: 10px; border-radius: 6px; }
-        .thumb-preview { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
-        .thumb-preview img { width: 40px; height: 40px; border-radius: 4px; }
+        .add-variant-btn { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #0b5ed7; color: #0b5ed7; background: #fff; border-radius: 8px; font-weight: bold; }
+        .save-btn { width: 100%; padding: 14px; background: #0b5ed7; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
 
-        .variant-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .variant-row input, .variant-row select { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        
-        .add-variant-btn { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #0b5ed7; color: #0b5ed7; background: #fff; border-radius: 6px; cursor: pointer; }
-        .save-btn { width: 100%; padding: 12px; background: #0b5ed7; color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
-
+        /* --- MOBILE ADJUSTMENTS --- */
         @media (max-width: 768px) {
-          .variant-row { grid-template-columns: 1fr 1fr; }
+          .modal-overlay { align-items: flex-end; } /* Slide from bottom on mobile */
+          .modal-box { border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; }
           .upload-section { grid-template-columns: 1fr; }
-          .modal-overlay { align-items: flex-end; padding: 0; }
-          .modal-box { border-radius: 20px 20px 0 0; }
+          .variant-row { grid-template-columns: 1fr 1fr; } /* 2x2 grid for variants on mobile */
+          .action-cells { display: flex; flex-direction: column; gap: 5px; }
         }
       `}</style>
     </div>
