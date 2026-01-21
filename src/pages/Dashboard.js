@@ -37,7 +37,7 @@ export default function Dashboard() {
     <div className="dashboard">
       {/* Header */}
       <header className="topbar">
-        <h1>ElanCloths Admin</h1>
+        <h1>NainikaEssentials Admin</h1>
         <span className="subtitle">Dashboard Overview</span>
       </header>
 

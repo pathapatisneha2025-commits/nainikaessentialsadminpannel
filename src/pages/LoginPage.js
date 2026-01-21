@@ -70,7 +70,7 @@ export default function AdminLogin() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1>ELANCOTT</h1>
+        <h1>NainikaEssentials</h1>
         <p className="subtitle">Admin Login</p>
 
         <form onSubmit={handleSubmit}>
