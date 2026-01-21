@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { LuSearch, LuX } from "react-icons/lu";
-import { useNavigate } from "react-router-dom";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const navigate = useNavigate();
 
-  
-  // Fetch orders
   useEffect(() => {
     fetch("https://nainikaessentialsdatabas.onrender.com/orders/")
       .then((res) => res.json())
@@ -27,6 +23,7 @@ export default function OrdersPage() {
     <div className="container">
       <h1>Orders</h1>
 
+      {/* Search */}
       <div className="search">
         <LuSearch />
         <input
@@ -36,7 +33,7 @@ export default function OrdersPage() {
         />
       </div>
 
-      {/* Desktop Table */}
+      {/* Table (Desktop + Mobile) */}
       <div className="table-wrapper">
         <table>
           <thead>
@@ -72,27 +69,13 @@ export default function OrdersPage() {
         </table>
       </div>
 
-      {/* Mobile Cards */}
-      <div className="cards">
-        {filtered.map((o) => (
-          <div className="card" key={o.order_id}>
-            <div><b>Order:</b> #{o.order_id}</div>
-            <div><b>User:</b> {o.user_id}</div>
-            <div><b>Date:</b> {new Date(o.created_at).toLocaleDateString()}</div>
-            <div><b>Total:</b> ₹{o.total_amount}</div>
-            <span className={`status ${o.order_status.toLowerCase()}`}>{o.order_status}</span>
-            <button onClick={() => setSelectedOrder(o)}>View</button>
-          </div>
-        ))}
-      </div>
-
       {/* Modal */}
       {selectedOrder && (
         <div className="modal">
           <div className="modal-box">
             <div className="modal-header">
               <h3>Order #{selectedOrder.order_id}</h3>
-              <LuX onClick={() => setSelectedOrder(null)} style={{ cursor: "pointer" }} />
+              <LuX onClick={() => setSelectedOrder(null)} />
             </div>
 
             {(() => {
@@ -115,7 +98,6 @@ export default function OrdersPage() {
       {/* Styles */}
       <style>{`
         * { box-sizing: border-box; }
-        body { margin: 0; }
 
         .container {
           padding: 16px;
@@ -128,11 +110,12 @@ export default function OrdersPage() {
 
         .search {
           display: flex;
+          align-items: center;
           gap: 8px;
           background: #e0f2fe;
-          padding: 10px;
-          border-radius: 10px;
-          max-width: 300px;
+          padding: 12px;
+          border-radius: 12px;
+          max-width: 400px;
           margin-bottom: 16px;
         }
 
@@ -144,11 +127,15 @@ export default function OrdersPage() {
         }
 
         /* Table */
-        .table-wrapper { overflow-x: auto; }
+        .table-wrapper {
+          overflow-x: auto;
+          background: white;
+          border-radius: 14px;
+        }
+
         table {
           width: 100%;
-          background: white;
-          border-radius: 12px;
+          min-width: 700px; /* KEY for mobile scroll */
           border-collapse: collapse;
         }
 
@@ -156,9 +143,13 @@ export default function OrdersPage() {
           padding: 12px;
           border-bottom: 1px solid #e5e7eb;
           text-align: left;
+          white-space: nowrap;
         }
 
-        th { background: #f1f5ff; color: #1d4ed8; }
+        th {
+          background: #f1f5ff;
+          color: #1d4ed8;
+        }
 
         button {
           padding: 6px 12px;
@@ -169,34 +160,15 @@ export default function OrdersPage() {
           cursor: pointer;
         }
 
-        button:hover {
-          background: #1d4ed8;
-          color: white;
-        }
-
         .status {
           padding: 4px 10px;
           border-radius: 14px;
           font-size: 12px;
           font-weight: 600;
-          display: inline-block;
         }
 
         .pending { background: #fef3c7; color: #92400e; }
         .completed { background: #dcfce7; color: #166534; }
-
-        /* Mobile Cards */
-        .cards { display: none; gap: 12px; }
-
-        .card {
-          background: white;
-          padding: 14px;
-          border-radius: 14px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
 
         /* Modal */
         .modal {
@@ -206,7 +178,6 @@ export default function OrdersPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
         }
 
         .modal-box {
@@ -214,7 +185,9 @@ export default function OrdersPage() {
           padding: 20px;
           border-radius: 16px;
           width: 90%;
-          max-width: 400px;
+          max-width: 420px;
+          max-height: 85vh;
+          overflow-y: auto;
         }
 
         .modal-header {
@@ -223,10 +196,12 @@ export default function OrdersPage() {
           align-items: center;
         }
 
-        /* Responsive */
+        /* Mobile tweaks */
         @media (max-width: 768px) {
-          .table-wrapper { display: none; }
-          .cards { display: flex; flex-direction: column; }
+          th, td {
+            padding: 10px;
+            font-size: 13px;
+          }
         }
       `}</style>
     </div>
