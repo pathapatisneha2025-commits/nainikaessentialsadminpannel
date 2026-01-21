@@ -7,6 +7,7 @@ export default function AdminInventory() {
   const [newCategory, setNewCategory] = useState("");
   const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [filterCategory, setFilterCategory] = useState("All"); // For filtering
 
   const emptyProduct = {
     name: "",
@@ -16,6 +17,7 @@ export default function AdminInventory() {
   };
   const [product, setProduct] = useState(emptyProduct);
 
+  // Fetch categories & products
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -44,6 +46,12 @@ export default function AdminInventory() {
   const allProducts = categories.flatMap((c) =>
     c.products.map((p) => ({ ...p, categoryName: c.name }))
   );
+
+  // Filtered products
+  const displayedProducts =
+    filterCategory === "All"
+      ? allProducts
+      : allProducts.filter((p) => p.categoryName === filterCategory);
 
   const addCategory = () => {
     if (!newCategory) return;
@@ -146,6 +154,19 @@ export default function AdminInventory() {
         </div>
       </div>
 
+      <div className="category-filter">
+        <label>Filter by Category: </label>
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+        >
+          <option value="All">All</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.name}>{c.name}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="category-grid">
         {categories.map((cat) => (
           <div key={cat.id} className="category-card" onClick={() => handleSetActiveCategory(cat)}>
@@ -168,7 +189,7 @@ export default function AdminInventory() {
             </tr>
           </thead>
           <tbody>
-            {allProducts.map((p) => (
+            {displayedProducts.map((p) => (
               <tr key={p.id}>
                 <td>{p.categoryName}</td>
                 <td>{p.name}</td>
@@ -176,11 +197,13 @@ export default function AdminInventory() {
                 <td className="thumbs">{p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}</td>
                 <td>
                   {p.variants?.map((v, i) => (
-                    <div key={i} className="variant-tag">{v.size}/{v.color} - ₹{v.price}</div>
+                    <div key={i} className="variant-tag">
+                      {v.size}/{v.color} - ₹{v.price} - Stock: {v.stock}
+                    </div>
                   ))}
                 </td>
                 <td className="action-cells">
-                  <button className="update-btn" onClick={() => updateProduct(p)}>Update</button>
+                  <button className="update-btn" onClick={() => updateProduct(p)}>Edit</button>
                   <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
                 </td>
               </tr>
@@ -189,6 +212,7 @@ export default function AdminInventory() {
         </table>
       </div>
 
+      {/* Modal */}
       {activeCategory && (
         <div className="modal-overlay" onClick={() => setActiveCategory(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
@@ -199,28 +223,36 @@ export default function AdminInventory() {
             <div className="modal-body">
               <input className="full-input" placeholder="Product Name" value={product.name} onChange={(e) => setProduct({ ...product, name: e.target.value })} />
               <div className="upload-section">
-                <div>
-                  <h4>Main Image</h4>
-                  <label className="custom-upload">Choose File<input type="file" onChange={handleMainImage} hidden /></label>
-                  {product.mainImage && <img src={product.mainImage.url} className="preview-img-main" />}
-                </div>
-                <div>
-                  <h4>Thumbnails</h4>
-                  <label className="custom-upload">Choose Files<input type="file" multiple onChange={handleThumbnails} hidden /></label>
-                  <div className="thumb-preview">{product.thumbnails.map((img, i) => <img key={i} src={img.url} />)}</div>
-                </div>
+               <div>
+  <h4>Main Image</h4>
+  <label className="custom-upload">Choose File
+    <input type="file" onChange={handleMainImage} hidden />
+  </label>
+  {product.mainImage && <img src={product.mainImage.url} className="preview-img-main" />}
+</div>
+
+<div>
+  <h4>Thumbnails</h4>
+  <label className="custom-upload">Choose Files
+    <input type="file" multiple onChange={handleThumbnails} hidden />
+  </label>
+  <div className="thumb-preview">
+    {product.thumbnails.map((img, i) => <img key={i} src={img.url} />)}
+  </div>
+</div>
+
               </div>
               <h4>Variants</h4>
               <div className="variants-container">
                 {product.variants.map((v, i) => (
-                    <div key={i} className="variant-row">
+                  <div key={i} className="variant-row">
                     <select value={v.size} onChange={(e) => updateVariant(i, "size", e.target.value)}>
-                        <option value="">Size</option><option>S</option><option>M</option><option>L</option><option>XL</option>
+                      <option value="">Size</option><option>S</option><option>M</option><option>L</option><option>XL</option>
                     </select>
                     <input placeholder="Color" value={v.color} onChange={(e) => updateVariant(i, "color", e.target.value)} />
                     <input type="number" placeholder="Price" value={v.price} onChange={(e) => updateVariant(i, "price", e.target.value)} />
                     <input type="number" placeholder="Stock" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} />
-                    </div>
+                  </div>
                 ))}
               </div>
               <button onClick={addVariant} className="add-variant-btn">+ Add Variant</button>
@@ -231,67 +263,58 @@ export default function AdminInventory() {
       )}
 
       <style>{`
-        /* --- MOBILE & DESKTOP RESET --- */
         .admin { padding: 15px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: #f8fafc; min-height: 100vh; }
-        
-        /* --- HEADER & CATEGORIES --- */
         h1 { color: #0b5ed7; text-align: center; font-size: 1.5rem; }
         .add-category { display: flex; gap: 8px; margin-bottom: 20px; }
         .add-category input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
         .add-category button { background: #0b5ed7; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; }
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
         .category-card { background: #fff; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; font-weight: bold; }
 
-        /* --- TABLE (SCROLLABLE) --- */
+        .category-filter { margin-bottom: 15px; }
+        .category-filter select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; }
+
         .table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 12px; margin-top: 20px; -webkit-overflow-scrolling: touch; }
         .product-table { width: 100%; min-width: 800px; border-collapse: collapse; }
         .product-table th, .product-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
         .mini-main { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; }
         .thumbs img { width: 30px; height: 30px; margin-right: 4px; border-radius: 4px; }
         .variant-tag { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 11px; display: inline-block; margin: 2px; }
+        .action-cells { display: flex; gap: 5px; }
 
-        /* --- MODAL (FIXED FOR MOBILE) --- */
-        .modal-overlay { 
-          position: fixed; 
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0,0,0,0.6); 
-          display: flex; 
-          align-items: center; 
-          justify-content: center; 
-          z-index: 9999; /* Ensure high z-index */
-        }
-        .modal-box { 
-          background: #fff; 
-          width: 95%; 
-          max-width: 650px; 
-          max-height: 85vh; /* Don't cover full screen to allow exit */
-          padding: 20px; 
-          border-radius: 16px; 
-          overflow-y: auto; 
-          position: relative;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+        .modal-box { background: #fff; width: 95%; max-width: 650px; max-height: 85vh; padding: 20px; border-radius: 16px; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
         .close-x { font-size: 30px; border: none; background: none; cursor: pointer; color: #666; }
-        
         .full-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .custom-upload { display: block; background: #f8fafc; padding: 10px; text-align: center; border: 1px dashed #0b5ed7; border-radius: 8px; cursor: pointer; color: #0b5ed7; font-size: 14px; }
-        .preview-img-main { width: 80px; height: 80px; object-fit: cover; margin-top: 10px; border-radius: 8px; }
+.preview-img-main { 
+  width: 50px;  /* smaller main image */
+  height: 50px; 
+  object-fit: cover; 
+  margin-top: 10px; 
+  border-radius: 6px; 
+}
 
+.thumb-preview img { 
+  width: 35px;  /* smaller thumbnails */
+  height: 35px; 
+  margin-right: 4px; 
+  border-radius: 4px; 
+  object-fit: cover;
+}
         .variant-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; }
         .variant-row input, .variant-row select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
-
         .add-variant-btn { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #0b5ed7; color: #0b5ed7; background: #fff; border-radius: 8px; font-weight: bold; }
         .save-btn { width: 100%; padding: 14px; background: #0b5ed7; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
 
-        /* --- MOBILE ADJUSTMENTS --- */
         @media (max-width: 768px) {
-          .modal-overlay { align-items: flex-end; } /* Slide from bottom on mobile */
+          .modal-overlay { align-items: flex-end; }
           .modal-box { border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; }
           .upload-section { grid-template-columns: 1fr; }
-          .variant-row { grid-template-columns: 1fr 1fr; } /* 2x2 grid for variants on mobile */
-          .action-cells { display: flex; flex-direction: column; gap: 5px; }
+          .variant-row { grid-template-columns: 1fr 1fr; }
+          .action-cells { flex-direction: column; }
         }
       `}</style>
     </div>

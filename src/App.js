@@ -1,14 +1,15 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Login from "./pages/LoginPage";
-import ResetPassword from "./pages/ResetPassword";
+
 import AdminLayout from "./components/Layout";
 import ProductInventory from "./pages/ProductPage";
 import OrdersPage from "./pages/Orders";
-import ResetPasswordPage from "./pages/ResetPassword";
+
 import ForgotPasswordPage from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AdminCoupons from "./pages/coupons";
+import AdminCodPanel from "./pages/Admincodpannel";
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="products" element={<ProductInventory />} />
           <Route path="orders" element={<OrdersPage />} />
             <Route path="coupons" element={<AdminCoupons />} />
+            <Route path="cod" element={<AdminCodPanel/>} />
 
           {/* <Route path="sales" element={<CategoryOrdersPage />} /> */}
         </Route>

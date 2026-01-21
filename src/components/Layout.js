@@ -7,6 +7,8 @@ import {
   LuMenu,
   LuX,
   LuLogOut,
+  LuIndianRupee,
+  LuTicket
 } from "react-icons/lu";
 
 export default function AdminLayout() {
@@ -21,12 +23,42 @@ export default function AdminLayout() {
   };
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: <LuLayoutDashboard />, path: "/admin/dashboard" },
-    { id: "products", label: "Products", icon: <LuPackage />, path: "/admin/products" },
-    { id: "orders", label: "Orders", icon: <LuShoppingBag />, path: "/admin/orders" },
-    { id: "coupons", label: "coupons", icon: <LuShoppingBag />, path: "/admin/coupons" },
-
-    { id: "logout", label: "Logout", icon: <LuLogOut />, action: handleLogout },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      icon: <LuLayoutDashboard size={18} />,
+      path: "/admin/dashboard"
+    },
+    {
+      id: "products",
+      label: "Products",
+      icon: <LuPackage size={18} />,
+      path: "/admin/products"
+    },
+    {
+      id: "orders",
+      label: "Orders",
+      icon: <LuShoppingBag size={18} />,
+      path: "/admin/orders"
+    },
+    {
+      id: "coupons",
+      label: "Coupons",
+      icon: <LuTicket size={18} />,
+      path: "/admin/coupons"
+    },
+    {
+      id: "cod-settings",
+      label: "COD Charges",
+      icon: <LuIndianRupee size={18} />,
+      path: "/admin/cod"
+    },
+    {
+      id: "logout",
+      label: "Logout",
+      icon: <LuLogOut size={18} />,
+      action: handleLogout
+    }
   ];
 
   useEffect(() => {
@@ -47,7 +79,8 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-logo">
-          Nainika<span>Essentials</span>
+          Nainika
+          <span>Essentials Admin</span>
         </div>
 
         <nav className="sidebar-nav">
@@ -68,7 +101,10 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content */}
-      <main className="main-content" onClick={() => sidebarOpen && setSidebarOpen(false)}>
+      <main
+        className="main-content"
+        onClick={() => sidebarOpen && setSidebarOpen(false)}
+      >
         <Outlet />
       </main>
 
@@ -80,7 +116,6 @@ export default function AdminLayout() {
           font-family: "Inter", sans-serif;
         }
 
-        /* Sidebar */
         .sidebar {
           width: 260px;
           background: linear-gradient(180deg, #0b5ed7, #084298);
@@ -96,7 +131,6 @@ export default function AdminLayout() {
           font-size: 22px;
           font-weight: 800;
           margin-bottom: 40px;
-          letter-spacing: 1px;
         }
 
         .sidebar-logo span {
@@ -134,13 +168,11 @@ export default function AdminLayout() {
           box-shadow: 0 6px 18px rgba(0,0,0,0.12);
         }
 
-        /* Main content */
         .main-content {
           flex: 1;
           padding: 40px;
         }
 
-        /* Mobile toggle */
         .mobile-toggle {
           display: none;
           position: fixed;
@@ -155,7 +187,6 @@ export default function AdminLayout() {
           cursor: pointer;
         }
 
-        /* Mobile */
         @media (max-width: 768px) {
           .sidebar {
             position: fixed;
