@@ -505,6 +505,192 @@ const allProducts = categories.flatMap(c =>
   margin: 0 auto 10px;    /* center */
   border-radius: 12px;
 }
+/* ================= GLOBAL ================= */
+* {
+  box-sizing: border-box;
+}
+
+.admin {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+/* ================= ADD CATEGORY ================= */
+.add-category {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-category input {
+  flex: 1;
+}
+
+/* ================= CATEGORY GRID ================= */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 15px;
+}
+
+/* ================= TABLE RESPONSIVE ================= */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.product-table {
+  width: 100%;
+  min-width: 1000px; /* IMPORTANT for mobile scrolling */
+  border-collapse: collapse;
+}
+
+.product-table th,
+.product-table td {
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.product-table th {
+  background: #f3f4f6;
+}
+
+/* ================= IMAGES ================= */
+.mini-main {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.thumbs img,
+.thumb-preview img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* ================= BUTTONS ================= */
+.update-btn {
+  background: #0b5ed7;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-right: 4px;
+  cursor: pointer;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+/* ================= MODAL ================= */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.modal-box {
+  background: white;
+  width: 100%;
+  max-width: 550px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 20px;
+  border-radius: 16px;
+}
+
+/* ================= VARIANTS ================= */
+.variant {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* ================= MOBILE ================= */
+@media (max-width: 768px) {
+
+  h1 {
+    font-size: 1.2rem;
+  }
+
+  /* Add Category */
+  .add-category {
+    flex-direction: column;
+  }
+
+  .add-category button {
+    width: 100%;
+  }
+
+  /* Category cards */
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  /* Table text */
+  .product-table th,
+  .product-table td {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  /* Images */
+  .mini-main {
+    width: 40px;
+    height: 40px;
+  }
+
+  .thumbs img,
+  .thumb-preview img {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* Buttons */
+  .update-btn,
+  .delete-btn {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  /* Modal */
+  .modal-box {
+    width: 95vw;
+    max-height: 90vh;
+    padding: 14px;
+  }
+
+  /* Variants stack */
+  .variant {
+    grid-template-columns: 1fr;
+  }
+
+  /* Main image inside modal */
+  .main-image {
+    max-width: 150px;
+    max-height: 120px;
+    margin: 0 auto 10px;
+    display: block;
+    object-fit: contain;
+  }
+}
 
 /* ---------------- RESPONSIVE ---------------- */
 @media (max-width: 768px) {
