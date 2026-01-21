@@ -363,22 +363,48 @@ export default function AdminInventory() {
         input, select { padding:8px; border-radius:6px; border:1px solid #cbd5e1; }
 
         /* MOBILE */
-        @media (max-width:768px){
-          h1 { font-size:1.2rem; }
-          .add-category { flex-direction:column; }
-          .add-category button { width:100%; }
-          .category-grid { grid-template-columns:repeat(2,1fr); }
+      /* MOBILE RESPONSIVE */
+@media (max-width:768px){
+  h1 { font-size:1.2rem; }
+  
+  /* ADD CATEGORY */
+  .add-category { flex-direction: column; gap:6px; }
+  .add-category input { font-size:14px; padding:6px; }
+  .add-category button { width:100%; font-size:14px; padding:8px; }
 
-          .product-table th, .product-table td { font-size:11px; padding:6px; }
-          .mini-main { width:40px; height:40px; }
-          .thumbs img, .thumb-preview img { width:28px; height:28px; }
+  /* CATEGORY CARDS */
+  .category-grid { grid-template-columns: repeat(2, 1fr); gap:10px; }
+  .category-card { padding:14px; font-size:14px; }
 
-          .update-btn, .delete-btn, .add-variant-btn, .save, .close { padding:4px 6px; font-size:11px; }
+  /* TABLE */
+  .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+  .product-table th, .product-table td { font-size:10px; padding:4px; }
+  .mini-main { width:30px; height:30px; }
+  .thumbs img, .thumb-preview img { width:24px; height:24px; }
 
-          .modal-box { width:95vw; max-height:90vh; padding:14px; }
-          .main-image { max-width:150px; max-height:120px; }
-          .variant { grid-template-columns:1fr; }
-        }
+  /* BUTTONS */
+  .update-btn, .delete-btn, .add-variant-btn, .save, .close {
+    padding:4px 6px; font-size:10px;
+  }
+
+  /* MODAL */
+  .modal-box {
+    width:95vw;
+    max-width:400px;
+    max-height:90vh;
+    padding:12px;
+    overflow-y:auto;
+  }
+  .modal-box h3 { font-size:1rem; }
+  .modal-box h4 { font-size:0.85rem; margin-top:8px; }
+  input, select { padding:6px; font-size:12px; }
+
+  .main-image { max-width:120px; max-height:100px; }
+
+  /* VARIANTS STACK */
+  .variant { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+}
+
       `}</style>
     </div>
   );
