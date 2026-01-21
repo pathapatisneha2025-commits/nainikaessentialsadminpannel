@@ -357,168 +357,224 @@ const allProducts = categories.flatMap(c =>
 
       {/* CSS */}
       <style>{`
-       /* ---------------- GLOBAL ---------------- */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-.admin {
+        .admin {
   padding: 20px;
   font-family: Arial, sans-serif;
 }
 
-/* ---------------- HEADER ---------------- */
+/* ================= HEADER ================= */
 h1 {
-  text-align: center;
   color: #0b5ed7;
-  font-size: 1.8rem;
+  text-align: center;
 }
 
-/* ---------------- ADD CATEGORY ---------------- */
+/* ================= ADD CATEGORY ================= */
 .add-category {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
 }
+
 .add-category input {
-  flex: 1 1 150px;
+  flex: 1;
   padding: 10px;
   border-radius: 8px;
   border: 1px solid #cbd5e1;
 }
-.add-category-btn {
+
+.add-category button {
   background: #0b5ed7;
   color: white;
   border: none;
   border-radius: 8px;
   padding: 10px 16px;
-  cursor: pointer;
   font-weight: bold;
+  cursor: pointer;
 }
 
-/* ---------------- CATEGORY GRID ---------------- */
+/* ================= CATEGORY GRID ================= */
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 15px;
 }
+
 .category-card {
   background: #fff;
-  padding: 15px;
+  padding: 20px;
   border-radius: 14px;
   text-align: center;
   cursor: pointer;
   box-shadow: 0 8px 16px rgba(0,0,0,.1);
   font-weight: bold;
-  transition: transform .2s;
+  transition: transform 0.2s;
 }
+
 .category-card:hover {
   transform: translateY(-3px);
 }
 
-/* ---------------- TABLE ---------------- */
+/* ================= TABLE ================= */
 .table-wrapper {
   width: 100%;
-  overflow: hidden; /* no horizontal scroll */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
 .product-table {
   width: 100%;
+  min-width: 900px; /* ensures horizontal scroll */
   border-collapse: collapse;
-  table-layout: auto; /* allow wrapping */
 }
+
 .product-table th,
 .product-table td {
   border: 1px solid #ddd;
-  padding: 6px;
+  padding: 8px;
+  white-space: nowrap;
   text-align: left;
-  word-wrap: break-word; /* wrap text */
-  max-width: 120px; /* small max width for mobile wrap */
-}
-.product-table th {
-  background: #f3f4f6;
 }
 
-/* ---------------- IMAGES ---------------- */
+.product-table th {
+  background-color: #f3f4f6;
+}
+
 .mini-main {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   object-fit: cover;
   border-radius: 6px;
 }
+
 .thumbs img,
 .thumb-preview img {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   object-fit: cover;
   border-radius: 4px;
   margin-right: 4px;
 }
 
-/* ---------------- BUTTONS ---------------- */
-.update-btn, .delete-btn, .add-variant-btn, .save, .close {
-  border: none;
+/* ================= BUTTONS ================= */
+.update-btn,
+.delete-btn,
+.add-variant-btn,
+.save,
+.close {
   border-radius: 6px;
-  padding: 5px 10px;
-  cursor: pointer;
+  padding: 6px 10px;
   font-size: 12px;
+  cursor: pointer;
+  border: none;
 }
-.update-btn { background: #0b5ed7; color: white; }
-.delete-btn { background: #ef4444; color: white; }
-.add-variant-btn, .save { background: #0b5ed7; color: white; }
-.close { background: #ef4444; color: white; }
 
-/* ---------------- MODAL ---------------- */
+.update-btn, .add-variant-btn, .save {
+  background: #0b5ed7;
+  color: #fff;
+}
+
+.delete-btn, .close {
+  background: #ef4444;
+  color: #fff;
+}
+
+/* ================= MODAL ================= */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0,0,0,.5);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 10px;
 }
+
 .modal-box {
   background: white;
   width: 100%;
-  max-width: 500px;
+  max-width: 550px;
   max-height: 90vh;
   overflow-y: auto;
-  padding: 15px;
+  padding: 20px;
   border-radius: 16px;
 }
 
-/* ---------------- VARIANTS ---------------- */
+.main-image {
+  width: 100%;
+  max-width: 200px;
+  max-height: 150px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 10px;
+  border-radius: 12px;
+}
+
+/* ================= VARIANTS ================= */
 .variant {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
   margin-bottom: 10px;
 }
 
-/* ---------------- RESPONSIVE ---------------- */
-@media (max-width: 768px) {
-  h1 { font-size: 1.4rem; }
-
-  .add-category { flex-direction: column; }
-  .add-category-btn { width: 100%; }
-
-  .category-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-
-  .product-table th, .product-table td { font-size: 10px; padding: 4px; max-width: 80px; }
-  .mini-main { width: 36px; height: 36px; }
-  .thumbs img, .thumb-preview img { width: 24px; height: 24px; }
-
-  .update-btn, .delete-btn { font-size: 10px; padding: 3px 5px; }
-  .variant { grid-template-columns: 1fr; }
-
-  .main-image { max-width: 120px; max-height: 100px; margin: 0 auto 10px; display: block; }
-  .modal-box { max-width: 95vw; padding: 10px; }
+input, select {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
 }
 
-      `}</style>
+/* ================= MOBILE RESPONSIVE ================= */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.2rem;
+  }
+
+  /* Category input & button stacked */
+  .add-category {
+    flex-direction: column;
+  }
+  .add-category button {
+    width: 100%;
+  }
+
+  /* Category grid two columns */
+  .category-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Table text & images smaller */
+  .product-table th, .product-table td {
+    font-size: 11px;
+    padding: 6px;
+  }
+
+  .mini-main { width: 40px; height: 40px; }
+  .thumbs img, .thumb-preview img { width: 28px; height: 28px; }
+
+  /* Buttons smaller */
+  .update-btn, .delete-btn, .add-variant-btn, .save, .close {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  /* Modal adjustments */
+  .modal-box {
+    width: 95vw;
+    max-height: 90vh;
+    padding: 14px;
+  }
+
+  .main-image {
+    max-width: 150px;
+    max-height: 120px;
+  }
+
+  /* Stack variants */
+  .variant {
+    grid-template-columns: 1fr;
+  }
+}
+    `}</style>
     </div>
   );
 }
