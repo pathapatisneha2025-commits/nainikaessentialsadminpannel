@@ -16,7 +16,6 @@ export default function AdminInventory() {
   };
   const [product, setProduct] = useState(emptyProduct);
 
-  /* ---------------- FETCH CATEGORIES & PRODUCTS ---------------- */
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -46,7 +45,6 @@ export default function AdminInventory() {
     c.products.map((p) => ({ ...p, categoryName: c.name }))
   );
 
-  /* ---------------- CATEGORY ---------------- */
   const addCategory = () => {
     if (!newCategory) return;
     setCategories([
@@ -56,11 +54,8 @@ export default function AdminInventory() {
     setNewCategory("");
   };
 
-  const handleSetActiveCategory = (cat) => {
-    setActiveCategory(cat);
-  };
+  const handleSetActiveCategory = (cat) => setActiveCategory(cat);
 
-  /* ---------------- IMAGE HANDLERS ---------------- */
   const handleMainImage = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -73,7 +68,6 @@ export default function AdminInventory() {
     setProduct({ ...product, thumbnails: [...product.thumbnails, ...thumbs] });
   };
 
-  /* ---------------- VARIANTS ---------------- */
   const addVariant = () => {
     setProduct({
       ...product,
@@ -87,7 +81,6 @@ export default function AdminInventory() {
     setProduct({ ...product, variants });
   };
 
-  /* ---------------- SAVE PRODUCT ---------------- */
   const saveProduct = async () => {
     if (!activeCategory) return;
 
@@ -124,7 +117,6 @@ export default function AdminInventory() {
     }
   };
 
-  /* ---------------- DELETE PRODUCT ---------------- */
   const deleteProduct = async (productId) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
@@ -151,7 +143,6 @@ export default function AdminInventory() {
     }
   };
 
-  /* ---------------- UPDATE PRODUCT ---------------- */
   const updateProduct = (prod) => {
     setActiveCategory(categories.find((c) => c.name === prod.category));
     setProduct({
@@ -161,57 +152,6 @@ export default function AdminInventory() {
       variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
     });
   };
-
-  /* ---------------- AUTO REFRESH STOCK ---------------- */
-  useEffect(() => {
-    let interval = setInterval(async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/all`);
-        const data = await res.json();
-        const updatedCategories = [...categories];
-        const stockChanges = [];
-
-        data.forEach((p) => {
-          const cat = updatedCategories.find((c) => c.name === p.category);
-          if (cat) {
-            const existingProd = cat.products.find((prod) => prod.id === p.id);
-            if (existingProd) {
-              p.variants.forEach((v, idx) => {
-                const oldStock = existingProd.variants[idx]?.stock;
-                if (v.stock !== oldStock) {
-                  stockChanges.push({
-                    category: cat.name,
-                    product: p.name,
-                    size: v.size,
-                    color: v.color,
-                    oldStock,
-                    newStock: v.stock,
-                  });
-                  existingProd.variants[idx].stock = v.stock;
-                }
-              });
-            }
-          }
-        });
-
-        if (stockChanges.length > 0) {
-          const msg = stockChanges
-            .map(
-              (c) =>
-                `Category: ${c.category}, Product: ${c.product}, Variant: ${c.size}/${c.color}, Stock: ${c.oldStock} → ${c.newStock}`
-            )
-            .join("\n");
-          alert(`Stock Updated:\n${msg}`);
-        }
-
-        setCategories(updatedCategories);
-      } catch (err) {
-        console.error(err);
-      }
-    }, 15000);
-
-    return () => clearInterval(interval);
-  }, [categories]);
 
   return (
     <div className="admin">
@@ -231,11 +171,7 @@ export default function AdminInventory() {
       <div className="category-grid">
         {categories.length === 0 && <p>No categories available</p>}
         {categories.map((cat) => (
-          <div
-            key={cat.id}
-            className="category-card"
-            onClick={() => handleSetActiveCategory(cat)}
-          >
+          <div key={cat.id} className="category-card" onClick={() => handleSetActiveCategory(cat)}>
             {cat.name}
           </div>
         ))}
@@ -271,9 +207,7 @@ export default function AdminInventory() {
                 </tr>
               ))
             ) : (
-              <tr>
-                <td colSpan={6}>No products available</td>
-              </tr>
+              <tr><td colSpan={6}>No products available</td></tr>
             )}
           </tbody>
         </table>
@@ -363,48 +297,31 @@ export default function AdminInventory() {
         input, select { padding:8px; border-radius:6px; border:1px solid #cbd5e1; }
 
         /* MOBILE */
-      /* MOBILE RESPONSIVE */
-@media (max-width:768px){
-  h1 { font-size:1.2rem; }
-  
-  /* ADD CATEGORY */
-  .add-category { flex-direction: column; gap:6px; }
-  .add-category input { font-size:14px; padding:6px; }
-  .add-category button { width:100%; font-size:14px; padding:8px; }
+        @media (max-width:768px){
+          h1 { font-size:1.2rem; }
 
-  /* CATEGORY CARDS */
-  .category-grid { grid-template-columns: repeat(2, 1fr); gap:10px; }
-  .category-card { padding:14px; font-size:14px; }
+          .add-category { flex-direction: column; gap:6px; }
+          .add-category input { font-size:14px; padding:6px; }
+          .add-category button { width:100%; font-size:14px; padding:8px; }
 
-  /* TABLE */
-  .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling: touch; }
-  .product-table th, .product-table td { font-size:10px; padding:4px; }
-  .mini-main { width:30px; height:30px; }
-  .thumbs img, .thumb-preview img { width:24px; height:24px; }
+          .category-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+          .category-card { padding:14px; font-size:14px; }
 
-  /* BUTTONS */
-  .update-btn, .delete-btn, .add-variant-btn, .save, .close {
-    padding:4px 6px; font-size:10px;
-  }
+          .table-wrapper { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+          .product-table th, .product-table td { font-size:10px; padding:4px; }
+          .mini-main { width:30px; height:30px; }
+          .thumbs img, .thumb-preview img { width:24px; height:24px; }
 
-  /* MODAL */
-  .modal-box {
-    width:95vw;
-    max-width:400px;
-    max-height:90vh;
-    padding:12px;
-    overflow-y:auto;
-  }
-  .modal-box h3 { font-size:1rem; }
-  .modal-box h4 { font-size:0.85rem; margin-top:8px; }
-  input, select { padding:6px; font-size:12px; }
+          .update-btn, .delete-btn, .add-variant-btn, .save, .close { padding:4px 6px; font-size:10px; }
 
-  .main-image { max-width:120px; max-height:100px; }
+          .modal-box { width:95vw; max-width:400px; max-height:90vh; padding:12px; overflow-y:auto; }
+          .modal-box h3 { font-size:1rem; }
+          .modal-box h4 { font-size:0.85rem; margin-top:8px; }
+          input, select { padding:6px; font-size:12px; }
+          .main-image { max-width:120px; max-height:100px; }
 
-  /* VARIANTS STACK */
-  .variant { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
-}
-
+          .variant { display:flex; flex-direction:column; gap:6px; margin-bottom:8px; }
+        }
       `}</style>
     </div>
   );
