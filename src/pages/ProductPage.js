@@ -41,9 +41,10 @@ export default function AdminInventory() {
     };
     fetchCategories();
   }, []);
-const allProducts = categories.flatMap(c => 
-  c.products.map(p => ({ ...p, categoryName: c.name }))
-);
+
+  const allProducts = categories.flatMap((c) =>
+    c.products.map((p) => ({ ...p, categoryName: c.name }))
+  );
 
   /* ---------------- CATEGORY ---------------- */
   const addCategory = () => {
@@ -155,7 +156,6 @@ const allProducts = categories.flatMap(c =>
 
   /* ---------------- UPDATE PRODUCT ---------------- */
   const updateProduct = (prod) => {
-    // For simplicity, just populate modal with existing product
     setActiveCategory(categories.find((c) => c.name === prod.category));
     setProduct({
       name: prod.name,
@@ -164,61 +164,57 @@ const allProducts = categories.flatMap(c =>
       variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
     });
   };
+
+  /* ---------------- AUTO REFRESH STOCK ---------------- */
   useEffect(() => {
-  let interval = setInterval(async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/all`);
-      const data = await res.json();
+    let interval = setInterval(async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/all`);
+        const data = await res.json();
+        const updatedCategories = [...categories];
+        const stockChanges = [];
 
-      const updatedCategories = [...categories];
-      const stockChanges = []; // Collect changes here
-
-      data.forEach((p) => {
-        const cat = updatedCategories.find(c => c.name === p.category);
-        if (cat) {
-          const existingProd = cat.products.find(prod => prod.id === p.id);
-          if (existingProd) {
-            p.variants.forEach((v, idx) => {
-              const oldStock = existingProd.variants[idx]?.stock;
-              if (v.stock !== oldStock) {
-                // Record the change
-                stockChanges.push({
-                  category: cat.name,
-                  product: p.name,
-                  size: v.size,
-                  color: v.color,
-                  oldStock,
-                  newStock: v.stock,
-                });
-
-                // Update local stock
-                existingProd.variants[idx].stock = v.stock;
-              }
-            });
+        data.forEach((p) => {
+          const cat = updatedCategories.find((c) => c.name === p.category);
+          if (cat) {
+            const existingProd = cat.products.find((prod) => prod.id === p.id);
+            if (existingProd) {
+              p.variants.forEach((v, idx) => {
+                const oldStock = existingProd.variants[idx]?.stock;
+                if (v.stock !== oldStock) {
+                  stockChanges.push({
+                    category: cat.name,
+                    product: p.name,
+                    size: v.size,
+                    color: v.color,
+                    oldStock,
+                    newStock: v.stock,
+                  });
+                  existingProd.variants[idx].stock = v.stock;
+                }
+              });
+            }
           }
+        });
+
+        if (stockChanges.length > 0) {
+          const msg = stockChanges
+            .map(
+              (c) =>
+                `Category: ${c.category}, Product: ${c.product}, Variant: ${c.size}/${c.color}, Stock: ${c.oldStock} → ${c.newStock}`
+            )
+            .join("\n");
+          alert(`Stock Updated:\n${msg}`);
         }
-      });
 
-      if (stockChanges.length > 0) {
-        // Build a readable alert message
-        const msg = stockChanges
-          .map(
-            (c) =>
-              `Category: ${c.category}, Product: ${c.product}, Variant: ${c.size}/${c.color}, Stock: ${c.oldStock} → ${c.newStock}`
-          )
-          .join("\n");
-        alert(`Stock Updated:\n${msg}`);
+        setCategories(updatedCategories);
+      } catch (err) {
+        console.error(err);
       }
+    }, 15000);
 
-      setCategories(updatedCategories);
-    } catch (err) {
-      console.error(err);
-    }
-  }, 15000); // every 15 seconds
-
-  return () => clearInterval(interval);
-}, [categories]);
-
+    return () => clearInterval(interval);
+  }, [categories]);
 
   return (
     <div className="admin">
@@ -231,9 +227,7 @@ const allProducts = categories.flatMap(c =>
           value={newCategory}
           onChange={(e) => setNewCategory(e.target.value)}
         />
-        <button className="add-category-btn" onClick={addCategory}>
-          ➕ Add Category
-        </button>
+        <button className="add-category-btn" onClick={addCategory}>➕ Add Category</button>
       </div>
 
       {/* CATEGORY CARDS */}
@@ -251,58 +245,44 @@ const allProducts = categories.flatMap(c =>
       </div>
 
       {/* PRODUCT TABLE */}
-     {/* PRODUCT TABLE */}
-<h2>All Products</h2>
-<div className="table-wrapper">
-  <table className="product-table">
-  <thead>
-    <tr>
-      <th>Category</th>
-      <th>Name</th>
-      <th>Main Image</th>
-      <th>Thumbnails</th>
-      <th>Variants</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {allProducts.length > 0 ? (
-      allProducts.map((p) => (
-        <tr key={p.id}>
-          <td>{p.categoryName}</td>
-          <td>{p.name}</td>
-          <td>
-            {p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}
-          </td>
-          <td className="thumbs">
-            {p.thumbnails?.map((t, j) => (
-              <img key={j} src={t} alt="thumb" />
-            ))}
-          </td>
-          <td>
-            {p.variants?.map((v, i) => (
-              <div key={i}>
-                {v.size}/{v.color} - ₹{v.price} ({v.stock})
-              </div>
-            ))}
-          </td>
-          <td>
-            <button className="update-btn" onClick={() => updateProduct(p)}>Update</button>
-            <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
-          </td>
-        </tr>
-      ))
-    ) : (
-      <tr>
-        <td colSpan={6}>No products available</td>
-      </tr>
-    )}
-  </tbody>
-</table>
-</div>
+      <h2>All Products</h2>
+      <div className="table-wrapper">
+        <table className="product-table">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Name</th>
+              <th>Main Image</th>
+              <th>Thumbnails</th>
+              <th>Variants</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allProducts.length > 0 ? (
+              allProducts.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.categoryName}</td>
+                  <td>{p.name}</td>
+                  <td>{p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}</td>
+                  <td className="thumbs">{p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}</td>
+                  <td>{p.variants?.map((v, i) => <div key={i}>{v.size}/{v.color} - ₹{v.price} ({v.stock})</div>)}</td>
+                  <td>
+                    <button className="update-btn" onClick={() => updateProduct(p)}>Update</button>
+                    <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={6}>No products available</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-
-      {/* MODAL FOR ADD/UPDATE PRODUCT */}
+      {/* MODAL */}
       {activeCategory && (
         <div className="modal">
           <div className="modal-box">
@@ -327,9 +307,7 @@ const allProducts = categories.flatMap(c =>
               <input type="file" multiple onChange={handleThumbnails} hidden />
             </label>
             <div className="thumb-preview">
-              {product.thumbnails.map((img, i) => (
-                <img key={i} src={img.url} alt="thumb" />
-              ))}
+              {product.thumbnails.map((img, i) => <img key={i} src={img.url} alt="thumb" />)}
             </div>
 
             <h4>Variants</h4>
@@ -355,226 +333,54 @@ const allProducts = categories.flatMap(c =>
         </div>
       )}
 
-      {/* CSS */}
+      {/* STYLES */}
       <style>{`
-        .admin {
-  padding: 20px;
-  font-family: Arial, sans-serif;
-}
+        .admin { padding: 20px; font-family: Arial,sans-serif; }
+        h1 { color:#0b5ed7; text-align:center; }
 
-/* ================= HEADER ================= */
-h1 {
-  color: #0b5ed7;
-  text-align: center;
-}
+        .add-category { display:flex; gap:10px; flex-wrap:wrap; }
+        .add-category input { flex:1; padding:10px; border-radius:8px; border:1px solid #cbd5e1; }
+        .add-category button { background:#0b5ed7; color:white; border:none; border-radius:8px; padding:10px 16px; font-weight:bold; cursor:pointer; }
 
-/* ================= ADD CATEGORY ================= */
-.add-category {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+        .category-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px,1fr)); gap:15px; }
+        .category-card { background:#fff; padding:20px; border-radius:14px; text-align:center; cursor:pointer; box-shadow:0 8px 16px rgba(0,0,0,.1); font-weight:bold; transition: transform 0.2s; }
+        .category-card:hover { transform:translateY(-3px); }
 
-.add-category input {
-  flex: 1;
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
-}
+        .table-wrapper { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+        .product-table { width:100%; min-width:900px; border-collapse:collapse; }
+        .product-table th, .product-table td { border:1px solid #ddd; padding:8px; white-space:nowrap; text-align:left; }
+        .product-table th { background-color:#f3f4f6; }
+        .mini-main { width:60px; height:60px; object-fit:cover; border-radius:6px; }
+        .thumbs img, .thumb-preview img { width:40px; height:40px; object-fit:cover; border-radius:4px; margin-right:4px; }
 
-.add-category button {
-  background: #0b5ed7;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-weight: bold;
-  cursor: pointer;
-}
+        .update-btn, .delete-btn, .add-variant-btn, .save, .close { border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer; border:none; }
+        .update-btn, .add-variant-btn, .save { background:#0b5ed7; color:#fff; }
+        .delete-btn, .close { background:#ef4444; color:#fff; }
 
-/* ================= CATEGORY GRID ================= */
-.category-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 15px;
-}
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,.5); display:flex; align-items:center; justify-content:center; padding:10px; }
+        .modal-box { background:white; width:100%; max-width:550px; max-height:90vh; overflow-y:auto; padding:20px; border-radius:16px; }
+        .main-image { width:100%; max-width:200px; max-height:150px; object-fit:contain; display:block; margin:0 auto 10px; border-radius:12px; }
 
-.category-card {
-  background: #fff;
-  padding: 20px;
-  border-radius: 14px;
-  text-align: center;
-  cursor: pointer;
-  box-shadow: 0 8px 16px rgba(0,0,0,.1);
-  font-weight: bold;
-  transition: transform 0.2s;
-}
+        .variant { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:10px; }
+        input, select { padding:8px; border-radius:6px; border:1px solid #cbd5e1; }
 
-.category-card:hover {
-  transform: translateY(-3px);
-}
+        @media (max-width:768px){
+          h1 { font-size:1.2rem; }
+          .add-category { flex-direction:column; }
+          .add-category button { width:100%; }
+          .category-grid { grid-template-columns:repeat(2,1fr); }
 
-/* ================= TABLE ================= */
-.table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
+          .product-table th, .product-table td { font-size:11px; padding:6px; }
+          .mini-main { width:40px; height:40px; }
+          .thumbs img, .thumb-preview img { width:28px; height:28px; }
 
-.product-table {
-  width: 100%;
-  min-width: 900px; /* ensures horizontal scroll */
-  border-collapse: collapse;
-}
+          .update-btn, .delete-btn, .add-variant-btn, .save, .close { padding:4px 6px; font-size:11px; }
 
-.product-table th,
-.product-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.product-table th {
-  background-color: #f3f4f6;
-}
-
-.mini-main {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.thumbs img,
-.thumb-preview img {
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-right: 4px;
-}
-
-/* ================= BUTTONS ================= */
-.update-btn,
-.delete-btn,
-.add-variant-btn,
-.save,
-.close {
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
-  cursor: pointer;
-  border: none;
-}
-
-.update-btn, .add-variant-btn, .save {
-  background: #0b5ed7;
-  color: #fff;
-}
-
-.delete-btn, .close {
-  background: #ef4444;
-  color: #fff;
-}
-
-/* ================= MODAL ================= */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-}
-
-.modal-box {
-  background: white;
-  width: 100%;
-  max-width: 550px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 20px;
-  border-radius: 16px;
-}
-
-.main-image {
-  width: 100%;
-  max-width: 200px;
-  max-height: 150px;
-  object-fit: contain;
-  display: block;
-  margin: 0 auto 10px;
-  border-radius: 12px;
-}
-
-/* ================= VARIANTS ================= */
-.variant {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-input, select {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #cbd5e1;
-}
-
-/* ================= MOBILE RESPONSIVE ================= */
-@media (max-width: 768px) {
-  h1 {
-    font-size: 1.2rem;
-  }
-
-  /* Category input & button stacked */
-  .add-category {
-    flex-direction: column;
-  }
-  .add-category button {
-    width: 100%;
-  }
-
-  /* Category grid two columns */
-  .category-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  /* Table text & images smaller */
-  .product-table th, .product-table td {
-    font-size: 11px;
-    padding: 6px;
-  }
-
-  .mini-main { width: 40px; height: 40px; }
-  .thumbs img, .thumb-preview img { width: 28px; height: 28px; }
-
-  /* Buttons smaller */
-  .update-btn, .delete-btn, .add-variant-btn, .save, .close {
-    padding: 4px 6px;
-    font-size: 11px;
-  }
-
-  /* Modal adjustments */
-  .modal-box {
-    width: 95vw;
-    max-height: 90vh;
-    padding: 14px;
-  }
-
-  .main-image {
-    max-width: 150px;
-    max-height: 120px;
-  }
-
-  /* Stack variants */
-  .variant {
-    grid-template-columns: 1fr;
-  }
-}
-    `}</style>
+          .modal-box { width:95vw; max-height:90vh; padding:14px; }
+          .main-image { max-width:150px; max-height:120px; }
+          .variant { grid-template-columns:1fr; }
+        }
+      `}</style>
     </div>
   );
 }
