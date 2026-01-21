@@ -8,6 +8,7 @@ import OrdersPage from "./pages/Orders";
 import ResetPasswordPage from "./pages/ResetPassword";
 import ForgotPasswordPage from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import AdminCoupons from "./pages/coupons";
 
 export default function App() {
   return (
@@ -29,6 +30,8 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="products" element={<ProductInventory />} />
           <Route path="orders" element={<OrdersPage />} />
+            <Route path="coupons" element={<AdminCoupons />} />
+
           {/* <Route path="sales" element={<CategoryOrdersPage />} /> */}
         </Route>
 

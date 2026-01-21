@@ -24,6 +24,8 @@ export default function AdminLayout() {
     { id: "dashboard", label: "Dashboard", icon: <LuLayoutDashboard />, path: "/admin/dashboard" },
     { id: "products", label: "Products", icon: <LuPackage />, path: "/admin/products" },
     { id: "orders", label: "Orders", icon: <LuShoppingBag />, path: "/admin/orders" },
+    { id: "coupons", label: "coupons", icon: <LuShoppingBag />, path: "/admin/coupons" },
+
     { id: "logout", label: "Logout", icon: <LuLogOut />, action: handleLogout },
   ];
 
@@ -45,7 +47,7 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
         <div className="sidebar-logo">
-          ELANCOTT<span>ADMIN</span>
+          Nainika<span>Essentials</span>
         </div>
 
         <nav className="sidebar-nav">

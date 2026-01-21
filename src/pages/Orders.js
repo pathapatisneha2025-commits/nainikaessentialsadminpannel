@@ -8,15 +8,7 @@ export default function OrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const navigate = useNavigate();
 
-  // Check if user is logged in
-  useEffect(() => {
-    const user = localStorage.getItem("adminUser");
-    if (!user) {
-      alert("You must be logged in to view this page!");
-      navigate("/login", { replace: true });
-    }
-  }, [navigate]);
-
+  
   // Fetch orders
   useEffect(() => {
     fetch("https://nainikaessentialsdatabas.onrender.com/orders/")

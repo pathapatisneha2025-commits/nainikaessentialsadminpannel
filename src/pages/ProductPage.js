@@ -1,331 +1,450 @@
 import React, { useState, useEffect } from "react";
-import { LuPlus, LuTrash2, LuPencil, LuX, LuImage, LuSearch } from "react-icons/lu";
 
-const API = "https://nainikaessentialsdatabas.onrender.com/products"; // replace with your backend
+const BASE_URL = "https://nainikaessentialsdatabas.onrender.com/products";
 
-export default function ProductInventory() {
-  const [showModal, setShowModal] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [products, setProducts] = useState([]);
-  const [editProduct, setEditProduct] = useState(null);
+export default function AdminInventory() {
+  const [categories, setCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState("");
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [loading, setLoading] = useState(false);
 
- const emptyProduct = {
-  name: "",
-  category: "Hoodies", // default category
-  subcategory: "Hoodies", // match the category
-  price: "",
-  stock: "",
-  images: [],
-  is_new: false,
-  is_bestseller: false,
-  is_featured: false,
-};
+  const emptyProduct = {
+    name: "",
+    mainImage: null,
+    thumbnails: [],
+    variants: [{ size: "", color: "", price: "", stock: "" }],
+  };
+  const [product, setProduct] = useState(emptyProduct);
 
-  const [formProduct, setFormProduct] = useState(emptyProduct);
-
-const categories = {
-  Hoodies: ["Hoodies"],
-  Shirts: ["Shirts"],
-  Pants: ["Pants"],
-  Clothing: ["Clothing"],
-};
-
-
+  /* ---------------- FETCH CATEGORIES & PRODUCTS ---------------- */
   useEffect(() => {
-    fetchProducts();
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${BASE_URL}/all`);
+        const data = await res.json();
+
+        const uniqueCategories = [
+          ...new Set(data.map((p) => p.category)),
+        ].map((name, idx) => ({
+          id: idx + 1,
+          name,
+          products: data.filter((p) => p.category === name),
+        }));
+
+        setCategories(uniqueCategories);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
   }, []);
+const allProducts = categories.flatMap(c => 
+  c.products.map(p => ({ ...p, categoryName: c.name }))
+);
 
-  const fetchProducts = async () => {
-  try {
-    const res = await fetch(`${API}/all`);
-    const data = await res.json();
-    // If backend returns { products: [...] }, use data.products
-    setProducts(Array.isArray(data) ? data : data.products || []);
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-
-  const filteredProducts = products.filter((p) =>
-    p.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleImageChange = (e) => {
-    setFormProduct({ ...formProduct, images: Array.from(e.target.files) });
+  /* ---------------- CATEGORY ---------------- */
+  const addCategory = () => {
+    if (!newCategory) return;
+    setCategories([
+      ...categories,
+      { id: Date.now(), name: newCategory, products: [] },
+    ]);
+    setNewCategory("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSetActiveCategory = (cat) => {
+    setActiveCategory(cat);
+  };
+
+  /* ---------------- IMAGE HANDLERS ---------------- */
+  const handleMainImage = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setProduct({ ...product, mainImage: { file, url: URL.createObjectURL(file) } });
+  };
+
+  const handleThumbnails = (e) => {
+    const files = Array.from(e.target.files);
+    const thumbs = files.map((file) => ({ file, url: URL.createObjectURL(file) }));
+    setProduct({ ...product, thumbnails: [...product.thumbnails, ...thumbs] });
+  };
+
+  /* ---------------- VARIANTS ---------------- */
+  const addVariant = () => {
+    setProduct({
+      ...product,
+      variants: [...product.variants, { size: "", color: "", price: "", stock: "" }],
+    });
+  };
+
+  const updateVariant = (i, field, value) => {
+    const variants = [...product.variants];
+    variants[i][field] = value;
+    setProduct({ ...product, variants });
+  };
+
+  /* ---------------- SAVE PRODUCT ---------------- */
+  const saveProduct = async () => {
+    if (!activeCategory) return;
+
+    const formData = new FormData();
+    formData.append("name", product.name);
+    formData.append("category", activeCategory.name);
+    formData.append("variants", JSON.stringify(product.variants));
+    if (product.mainImage?.file) formData.append("mainImage", product.mainImage.file);
+    product.thumbnails.forEach((thumb) => thumb.file && formData.append("thumbnails", thumb.file));
+
     try {
-      const formData = new FormData();
-      Object.entries(formProduct).forEach(([key, value]) => {
-        if (key !== "images") formData.append(key, value);
+      setLoading(true);
+      const res = await fetch(`${BASE_URL}/add`, {
+        method: "POST",
+        body: formData,
       });
-      formProduct.images.forEach((img) => {
-        if (img instanceof File) formData.append("images", img);
-      });
+      const data = await res.json();
 
-      if (editProduct) {
-        formData.append("existingImages", JSON.stringify(editProduct.images));
+      if (res.ok) {
+        alert("Product added successfully!");
+        setCategories(
+          categories.map((c) =>
+            c.id === activeCategory.id
+              ? { ...c, products: [...c.products, data.product] }
+              : c
+          )
+        );
+        setProduct(emptyProduct);
+      } else {
+        alert(data.error || "Error adding product");
       }
-
-      const url = editProduct ? `${API}/update/${editProduct.id}` : `${API}/add`;
-      const method = editProduct ? "PUT" : "POST";
-
-      const res = await fetch(url, { method, body: formData });
-      const result = await res.json();
-
-      setProducts((prev) =>
-        editProduct
-          ? prev.map((p) => (p.id === editProduct.id ? result.product : p))
-          : [result.product, ...prev]
-      );
-
-      setShowModal(false);
-      setEditProduct(null);
-      setFormProduct(emptyProduct);
     } catch (err) {
       console.error(err);
-      alert("Operation failed");
+      alert("Server error");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this product?")) return;
+  /* ---------------- DELETE PRODUCT ---------------- */
+  const deleteProduct = async (productId) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
-      await fetch(`${API}/delete/${id}`, { method: "DELETE" });
-      setProducts(products.filter((p) => p.id !== id));
-    } catch {
-      alert("Delete failed");
+      setLoading(true);
+      const res = await fetch(`${BASE_URL}/delete/${productId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (res.ok) {
+        alert("Product deleted!");
+        setCategories(
+          categories.map((c) =>
+            c.id === activeCategory.id
+              ? { ...c, products: c.products.filter((p) => p.id !== productId) }
+              : c
+          )
+        );
+      } else {
+        alert(data.error || "Error deleting product");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Server error");
+    } finally {
+      setLoading(false);
     }
   };
+
+  /* ---------------- UPDATE PRODUCT ---------------- */
+  const updateProduct = (prod) => {
+    // For simplicity, just populate modal with existing product
+    setActiveCategory(categories.find((c) => c.name === prod.category));
+    setProduct({
+      name: prod.name,
+      mainImage: { url: prod.main_image },
+      thumbnails: prod.thumbnails.map((t) => ({ url: t })),
+      variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
+    });
+  };
+  useEffect(() => {
+  let interval = setInterval(async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/all`);
+      const data = await res.json();
+
+      const updatedCategories = [...categories];
+      const stockChanges = []; // Collect changes here
+
+      data.forEach((p) => {
+        const cat = updatedCategories.find(c => c.name === p.category);
+        if (cat) {
+          const existingProd = cat.products.find(prod => prod.id === p.id);
+          if (existingProd) {
+            p.variants.forEach((v, idx) => {
+              const oldStock = existingProd.variants[idx]?.stock;
+              if (v.stock !== oldStock) {
+                // Record the change
+                stockChanges.push({
+                  category: cat.name,
+                  product: p.name,
+                  size: v.size,
+                  color: v.color,
+                  oldStock,
+                  newStock: v.stock,
+                });
+
+                // Update local stock
+                existingProd.variants[idx].stock = v.stock;
+              }
+            });
+          }
+        }
+      });
+
+      if (stockChanges.length > 0) {
+        // Build a readable alert message
+        const msg = stockChanges
+          .map(
+            (c) =>
+              `Category: ${c.category}, Product: ${c.product}, Variant: ${c.size}/${c.color}, Stock: ${c.oldStock} → ${c.newStock}`
+          )
+          .join("\n");
+        alert(`Stock Updated:\n${msg}`);
+      }
+
+      setCategories(updatedCategories);
+    } catch (err) {
+      console.error(err);
+    }
+  }, 15000); // every 15 seconds
+
+  return () => clearInterval(interval);
+}, [categories]);
+
 
   return (
-    <div className="admin-container">
-      <main className="main-content">
-        <header className="admin-header">
-          <div>
-            <h1>Product Inventory</h1>
-            <p className="breadcrumb">Showing {filteredProducts.length} items</p>
+    <div className="admin">
+      <h1>Inventory Management</h1>
+
+      {/* ADD CATEGORY */}
+      <div className="add-category">
+        <input
+          placeholder="Add Category"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+        />
+        <button className="add-category-btn" onClick={addCategory}>
+          ➕ Add Category
+        </button>
+      </div>
+
+      {/* CATEGORY CARDS */}
+      <div className="category-grid">
+        {categories.length === 0 && <p>No categories available</p>}
+        {categories.map((cat) => (
+          <div
+            key={cat.id}
+            className="category-card"
+            onClick={() => handleSetActiveCategory(cat)}
+          >
+            {cat.name}
           </div>
+        ))}
+      </div>
 
-          <div className="header-actions">
-            <div className="search-box">
-              <LuSearch />
-              <input
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <button
-              className="add-btn"
-              onClick={() => {
-                setEditProduct(null);
-                setFormProduct(emptyProduct);
-                setShowModal(true);
-              }}
-            >
-              <LuPlus /> Add Product
-            </button>
-          </div>
-        </header>
-
-        <div className="data-table-container">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Sub</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div className="product-info">
-                      <div className="img-placeholder">
-                        {p.images?.length ? (
-                          <img src={p.images[0]} alt="" />
-                        ) : (
-                          <LuImage />
-                        )}
-                      </div>
-                      <div>
-                        <b>{p.name}</b>
-                        <div className="small-text">ID #{p.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{p.category}</td>
-                  <td>{p.subcategory}</td>
-                  <td>${p.price}</td>
-                  <td>{p.stock}</td>
-                  <td>
-                    <span className={`status-badge ${p.stock > 0 ? "active" : "out"}`}>
-                      {p.stock > 0 ? "In Stock" : "Out"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="action-group">
-                      <button
-                        className="action-btn edit"
-                        onClick={() => {
-                          setEditProduct(p);
-                          setFormProduct({ ...p });
-                          setShowModal(true);
-                        }}
-                      >
-                        <LuPencil />
-                      </button>
-                      <button className="action-btn delete" onClick={() => handleDelete(p.id)}>
-                        <LuTrash2 />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </main>
-
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>{editProduct ? "Edit Product" : "Add Product"}</h2>
-              <button className="close-btn" onClick={() => setShowModal(false)}>
-                <LuX />
-              </button>
-            </div>
-
-            <form className="modal-form" onSubmit={handleSubmit}>
-              <input
-                placeholder="Product Name"
-                value={formProduct.name}
-                onChange={(e) => setFormProduct({ ...formProduct, name: e.target.value })}
-              />
-
-             <select
-  value={formProduct.category}
-  onChange={(e) =>
-    setFormProduct({
-      ...formProduct,
-      category: e.target.value,
-      subcategory: categories[e.target.value][0],
-    })
-  }
->
-  {Object.keys(categories).map((c) => (
-    <option key={c}>{c}</option>
-  ))}
-</select>
-
-
-
-
-
-              <input
-                type="number"
-                placeholder="Price"
-                value={formProduct.price}
-                onChange={(e) => setFormProduct({ ...formProduct, price: e.target.value })}
-              />
-
-              <input
-                type="number"
-                placeholder="Stock"
-                value={formProduct.stock}
-                onChange={(e) => setFormProduct({ ...formProduct, stock: e.target.value })}
-              />
-
-              <input type="file" multiple onChange={handleImageChange} />
-
-              <div style={{ display: "flex", gap: "8px" }}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={formProduct.is_new}
-                    onChange={(e) => setFormProduct({ ...formProduct, is_new: e.target.checked })}
-                  />{" "}
-                  New
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={formProduct.is_bestseller}
-                    onChange={(e) =>
-                      setFormProduct({ ...formProduct, is_bestseller: e.target.checked })
-                    }
-                  />{" "}
-                  Bestseller
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={formProduct.is_featured}
-                    onChange={(e) =>
-                      setFormProduct({ ...formProduct, is_featured: e.target.checked })
-                    }
-                  />{" "}
-                  Featured
-                </label>
+      {/* PRODUCT TABLE */}
+     {/* PRODUCT TABLE */}
+<h2>All Products</h2>
+<table className="product-table">
+  <thead>
+    <tr>
+      <th>Category</th>
+      <th>Name</th>
+      <th>Main Image</th>
+      <th>Thumbnails</th>
+      <th>Variants</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {allProducts.length > 0 ? (
+      allProducts.map((p) => (
+        <tr key={p.id}>
+          <td>{p.categoryName}</td>
+          <td>{p.name}</td>
+          <td>
+            {p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}
+          </td>
+          <td className="thumbs">
+            {p.thumbnails?.map((t, j) => (
+              <img key={j} src={t} alt="thumb" />
+            ))}
+          </td>
+          <td>
+            {p.variants?.map((v, i) => (
+              <div key={i}>
+                {v.size}/{v.color} - ₹{v.price} ({v.stock})
               </div>
+            ))}
+          </td>
+          <td>
+            <button className="update-btn" onClick={() => updateProduct(p)}>Update</button>
+            <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
+          </td>
+        </tr>
+      ))
+    ) : (
+      <tr>
+        <td colSpan={6}>No products available</td>
+      </tr>
+    )}
+  </tbody>
+</table>
 
-              <button className="submit-btn">{editProduct ? "Update Product" : "Save Product"}</button>
-            </form>
+
+      {/* MODAL FOR ADD/UPDATE PRODUCT */}
+      {activeCategory && (
+        <div className="modal">
+          <div className="modal-box">
+            <h3>{product.name ? "Update Product" : "Add Product"} in {activeCategory.name}</h3>
+
+            <input
+              placeholder="Product Name"
+              value={product.name}
+              onChange={(e) => setProduct({ ...product, name: e.target.value })}
+            />
+
+            <h4>Main Image</h4>
+            <label className="upload-btn">
+              Upload Main Image
+              <input type="file" onChange={handleMainImage} hidden />
+            </label>
+            {product.mainImage && <img src={product.mainImage.url} className="main-image" alt="main" />}
+
+            <h4>Thumbnails</h4>
+            <label className="upload-btn secondary">
+              Upload Thumbnails
+              <input type="file" multiple onChange={handleThumbnails} hidden />
+            </label>
+            <div className="thumb-preview">
+              {product.thumbnails.map((img, i) => (
+                <img key={i} src={img.url} alt="thumb" />
+              ))}
+            </div>
+
+            <h4>Variants</h4>
+            {product.variants.map((v, i) => (
+              <div key={i} className="variant">
+                <select onChange={(e) => updateVariant(i, "size", e.target.value)}>
+                  <option value="">Size</option>
+                  <option>S</option>
+                  <option>M</option>
+                  <option>L</option>
+                  <option>XL</option>
+                </select>
+                <input placeholder="Color" onChange={(e) => updateVariant(i, "color", e.target.value)} />
+                <input type="number" placeholder="Price" onChange={(e) => updateVariant(i, "price", e.target.value)} />
+                <input type="number" placeholder="Stock" onChange={(e) => updateVariant(i, "stock", e.target.value)} />
+              </div>
+            ))}
+            <button onClick={addVariant} className="add-variant-btn">+ Add Size / Color</button>
+            <button className="save" onClick={saveProduct} disabled={loading}>{loading ? "Saving..." : "Save Product"}</button>
+
+            <button className="close" onClick={() => setActiveCategory(null)}>Close</button>
           </div>
         </div>
       )}
 
-    
-
-
+      {/* CSS */}
       <style>{`
-        .admin-container { font-family: 'Inter', sans-serif; background: #F8FAFC; min-height: 100vh; padding: 20px; }
-        .admin-header { display:flex; justify-content: space-between; align-items:center; margin-bottom: 20px; }
-        h1 { color: #0B5ED7; margin:0; }
-        .breadcrumb { color: #64748B; font-size: 14px; margin-top:4px; }
+        .admin { padding: 20px; font-family: Arial, sans-serif; }
+        h1 { color: #0b5ed7; text-align: center; }
+        .add-category { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .add-category input { padding: 10px; flex: 1 1 150px; border-radius: 8px; border: 1px solid #cbd5e1; }
+        .add-category-btn { background: #0b5ed7; color: white; border: none; border-radius: 8px; padding: 10px 16px; cursor: pointer; font-weight: bold; }
 
-        .header-actions { display:flex; gap:10px; align-items:center; }
-        .search-box { display:flex; align-items:center; gap:6px; background:#E0F0FF; padding:6px 10px; border-radius:12px; }
-        .search-box input { border:none; outline:none; background:transparent; padding:4px 6px; }
+        .category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; }
+        .category-card { background: #fff; padding: 20px; border-radius: 14px; text-align: center; cursor: pointer; box-shadow: 0 8px 16px rgba(0,0,0,.1); font-weight: bold; transition: transform 0.2s; }
+        .category-card:hover { transform: translateY(-3px); }
 
-        .add-btn { display:flex; align-items:center; gap:6px; background:#0B5ED7; color:white; border:none; border-radius:10px; padding:6px 12px; cursor:pointer; }
+        .product-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .product-table th, .product-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .product-table th { background-color: #f3f4f6; }
+        .mini-main { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
+        .thumbs img { width: 40px; height: 40px; object-fit: cover; border-radius: 4px; margin-right: 4px; }
+        .update-btn { background: #0b5ed7; color: white; border: none; border-radius: 6px; padding: 5px 10px; margin-right: 5px; cursor: pointer; }
+        .delete-btn { background: #ef4444; color: white; border: none; border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.thumb-preview img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+@media (max-width: 768px) {
+  .thumb { width: 30px; height: 30px; }
+}
 
-        .data-table-container { overflow-x:auto; }
-        table.admin-table { width:100%; border-collapse: collapse; background:white; border-radius:12px; overflow:hidden; }
-        table.admin-table th, table.admin-table td { padding:12px 10px; text-align:left; border-bottom:1px solid #E2E8F0; font-size:14px; }
-        table.admin-table th { background:#F1F5FF; color:#0B5ED7; font-weight:600; }
-        .product-info { display:flex; align-items:center; gap:10px; }
-        .img-placeholder { width:40px; height:40px; background:#E0F0FF; display:flex; align-items:center; justify-content:center; border-radius:6px; overflow:hidden; }
-        .img-placeholder img { width:100%; height:100%; object-fit:cover; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; padding: 10px; }
+        .modal-box { background: white; width: 100%; max-width: 550px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
+        .upload-btn { display: inline-block; background: #0b5ed7; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
+        .upload-btn.secondary { background: #64748b; }
+        .main-image { width: 100%; height: 220px; object-fit: cover; border-radius: 12px; margin-bottom: 10px; }
+        .thumb-preview, .thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+        .variant { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 8px; margin-bottom: 10px; }
+        input, select { padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; }
+        .add-variant-btn, .save { background: #0b5ed7; color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; margin-top: 10px; }
+        .close { background: #ef4444; color: white; border: none; border-radius: 8px; margin-top: 20px; padding: 8px 12px; cursor: pointer; }
 
-        .status-badge { padding:4px 8px; border-radius:8px; font-size:12px; font-weight:600; display:inline-block; }
-        .status-badge.active { background:#D1FAE5; color:#065F46; }
-        .status-badge.out { background:#FEE2E2; color:#B91C1C; }
+        @media (max-width: 768px) {
+          .product-table, .product-table th, .product-table td { font-size: 12px; }
+          .mini-main { width: 40px; height: 40px; }
+          .thumbs img { width: 30px; height: 30px; }
+        }
+          @media (max-width: 768px) {
+  .main-image {
+    max-width: 90%;
+    max-height: 150px;
+  }
+}
+/* ---------------- TABLE IMAGES ---------------- */
+        .mini-main { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; }
 
-        .action-group { display:flex; gap:6px; }
-        .action-btn { border:none; background:#E0F0FF; padding:6px; border-radius:8px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-        .action-btn.edit { background:#0B5ED7; color:white; }
-        .action-btn.delete { background:#EF4444; color:white; }
 
-        /* Modal */
-        .modal-overlay { position:fixed; inset:0; background: rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:1000; }
-        .modal-content { background:white; padding:30px; border-radius:16px; width:90%; max-width:400px; }
-        .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-        .close-btn { background:none; border:none; cursor:pointer; font-size:18px; }
-        .modal-form { display:flex; flex-direction:column; gap:12px; }
-        .modal-form input, .modal-form select { padding:10px; border-radius:8px; border:1px solid #E2E8F0; outline:none; }
-        .submit-btn { background:#0B5ED7; color:white; border:none; padding:12px; border-radius:12px; font-weight:700; cursor:pointer; }
+.thumbs img,
+.thumb-preview img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+
+/* ---------------- MODAL MAIN IMAGE ---------------- */
+.main-image {
+  display: block;         /* block layout */
+  width: auto;            /* do not stretch */
+  max-width: 200px;       /* moderate width */
+  max-height: 150px;      /* moderate height */
+  object-fit: contain;    /* show whole image */
+  margin: 0 auto 10px;    /* center */
+  border-radius: 12px;
+}
+
+/* ---------------- RESPONSIVE ---------------- */
+@media (max-width: 768px) {
+  .mini-main {
+    width: 20px;
+    height: 20px;
+  }
+  .thumbs img,
+  .thumb-preview img {
+    width: 30px;
+    height: 30px;
+  }
+  .main-image {
+    max-width: 150px;
+    max-height: 120px;
+  }
+}
+
       `}</style>
     </div>
   );
