@@ -7,9 +7,10 @@ export default function AdminInventory() {
   const [newCategory, setNewCategory] = useState("");
   const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [filterCategory, setFilterCategory] = useState("All"); // For filtering
+  const [filterCategory, setFilterCategory] = useState("All");
   const [alerts, setAlerts] = useState([]);
-  const [showModal, setShowModal] = useState(false); // NEW: modal state
+  const [showModal, setShowModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
 
   const emptyProduct = {
     name: "",
@@ -28,7 +29,6 @@ export default function AdminInventory() {
         setLoading(true);
         const res = await fetch(`${BASE_URL}/all`);
         const data = await res.json();
-
         const uniqueCategories = [
           ...new Set(data.map((p) => p.category)),
         ].map((name, idx) => ({
@@ -36,7 +36,6 @@ export default function AdminInventory() {
           name,
           products: data.filter((p) => p.category === name),
         }));
-
         setCategories(uniqueCategories);
       } catch (err) {
         console.error(err);
@@ -86,7 +85,8 @@ export default function AdminInventory() {
   const handleSetActiveCategory = (cat) => {
     setProduct(emptyProduct);
     setActiveCategory(cat);
-    setShowModal(true); // open modal on category click
+    setEditingProduct(null); // Adding new product
+    setShowModal(true);
   };
 
   const handleMainImage = (e) => {
@@ -115,23 +115,45 @@ export default function AdminInventory() {
   };
 
   const saveProduct = async () => {
-    if (!activeCategory) return;
+    if (!activeCategory) return alert("Select a category");
+    if (!product.name) return alert("Enter product name");
+
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("category", activeCategory.name);
     formData.append("variants", JSON.stringify(product.variants));
+
     if (product.mainImage?.file) formData.append("mainImage", product.mainImage.file);
-    product.thumbnails.forEach((thumb) => thumb.file && formData.append("thumbnails", thumb.file));
+    product.thumbnails.forEach((thumb) => {
+      if (thumb.file) formData.append("thumbnails", thumb.file);
+    });
 
     try {
       setLoading(true);
-      const res = await fetch(`${BASE_URL}/add`, { method: "POST", body: formData });
+      let res;
+      if (editingProduct) {
+        res = await fetch(`${BASE_URL}/update/${editingProduct.id}`, {
+          method: "PUT",
+          body: formData,
+        });
+      } else {
+        res = await fetch(`${BASE_URL}/add`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+
+      const data = await res.json();
       if (res.ok) {
-        alert("Product saved!");
+        alert(editingProduct ? "Product updated!" : "Product added!");
         window.location.reload();
+      } else {
+        console.error("Backend error:", data);
+        alert("Error: " + (data.error || "Unknown error"));
       }
     } catch (err) {
       console.error(err);
+      alert("Error saving product");
     } finally {
       setLoading(false);
     }
@@ -159,6 +181,7 @@ export default function AdminInventory() {
       thumbnails: prod.thumbnails ? prod.thumbnails.map((t) => ({ url: t })) : [],
       variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
     });
+    setEditingProduct(prod);
     setShowModal(true);
   };
 
@@ -250,14 +273,10 @@ export default function AdminInventory() {
                 <td>{p.categoryName}</td>
                 <td>{p.name}</td>
                 <td>
-                  {p.main_image && (
-                    <img src={p.main_image} alt="main" className="mini-main" />
-                  )}
+                  {p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}
                 </td>
                 <td className="thumbs">
-                  {p.thumbnails?.map((t, j) => (
-                    <img key={j} src={t} alt="thumb" />
-                  ))}
+                  {p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}
                 </td>
                 <td>
                   {p.variants?.map((v, i) => {
@@ -294,7 +313,9 @@ export default function AdminInventory() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{product.name ? "Edit Product" : "Add Product"}</h3>
+              <h3>
+                {editingProduct ? "Edit Product" : `Add Product to ${activeCategory?.name}`}
+              </h3>
               <button className="close-x" onClick={() => setShowModal(false)}>
                 &times;
               </button>
@@ -321,37 +342,17 @@ export default function AdminInventory() {
                 <input type="file" multiple onChange={handleThumbnails} style={{ display: "none" }} />
               </label>
               <div className="thumb-preview">
-                {product.thumbnails.map((t, i) => (
-                  <img key={i} src={t.url} alt="thumb" />
-                ))}
+                {product.thumbnails.map((t, i) => <img key={i} src={t.url} alt="thumb" />)}
               </div>
             </div>
 
             <div>
               {product.variants.map((v, i) => (
                 <div className="variant-row" key={i}>
-                  <input
-                    placeholder="Size"
-                    value={v.size}
-                    onChange={(e) => updateVariant(i, "size", e.target.value)}
-                  />
-                  <input
-                    placeholder="Color"
-                    value={v.color}
-                    onChange={(e) => updateVariant(i, "color", e.target.value)}
-                  />
-                  <input
-                    placeholder="Price"
-                    type="number"
-                    value={v.price}
-                    onChange={(e) => updateVariant(i, "price", e.target.value)}
-                  />
-                  <input
-                    placeholder="Stock"
-                    type="number"
-                    value={v.stock}
-                    onChange={(e) => updateVariant(i, "stock", e.target.value)}
-                  />
+                  <input placeholder="Size" value={v.size} onChange={(e) => updateVariant(i, "size", e.target.value)} />
+                  <input placeholder="Color" value={v.color} onChange={(e) => updateVariant(i, "color", e.target.value)} />
+                  <input placeholder="Price" type="number" value={v.price} onChange={(e) => updateVariant(i, "price", e.target.value)} />
+                  <input placeholder="Stock" type="number" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} />
                 </div>
               ))}
               <button className="add-variant-btn" onClick={addVariant}>
@@ -367,7 +368,6 @@ export default function AdminInventory() {
       )}
 
       
-
 
       <style>{`
         .admin { padding: 15px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: #f8fafc; min-height: 100vh; }
