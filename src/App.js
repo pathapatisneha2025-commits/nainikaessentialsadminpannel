@@ -10,6 +10,7 @@ import ForgotPasswordPage from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import AdminCoupons from "./pages/coupons";
 import AdminCodPanel from "./pages/Admincodpannel";
+import SalesReport from "./pages/SalesReport";
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="orders" element={<OrdersPage />} />
             <Route path="coupons" element={<AdminCoupons />} />
             <Route path="cod" element={<AdminCodPanel/>} />
+            <Route path="ordersales" element={<SalesReport/>} />
 
           {/* <Route path="sales" element={<CategoryOrdersPage />} /> */}
         </Route>

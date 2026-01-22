@@ -6,6 +6,7 @@ export default function Dashboard() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [filterType, setFilterType] = useState(""); // pending, cod, or ""
 
   useEffect(() => {
     fetch("https://nainikaessentialsdatabas.onrender.com/orders/")
@@ -16,22 +17,28 @@ export default function Dashboard() {
 
   // Stats
   const totalOrders = orders.length;
-  const totalRevenue = orders.reduce(
-    (sum, o) => sum + Number(o.total_amount),
-    0
-  );
-  const pendingOrders = orders.filter(
-    (o) => o.order_status === "Pending"
-  ).length;
-  const codOrders = orders.filter(
-    (o) => o.payment_method === "cod"
-  ).length;
+  const totalRevenue = orders.reduce((sum, o) => sum + Number(o.total_amount), 0);
+  const pendingOrders = orders.filter((o) => o.order_status === "Pending").length;
+  const codOrders = orders.filter((o) => o.payment_method === "cod").length;
 
-  const filtered = orders.filter(
-    (o) =>
-      o.order_id.toString().includes(search) ||
-      o.user_id.toString().includes(search)
-  );
+  // Combined filter: search + card filter
+  const filtered = orders.filter((o) => {
+    const searchLower = search.toLowerCase();
+    const matchesSearch =
+      o.order_id.toString().includes(searchLower) ||
+      o.user_id.toString().includes(searchLower) ||
+      o.payment_method.toLowerCase().includes(searchLower) ||
+      o.order_status.toLowerCase().includes(searchLower);
+
+    const matchesCard =
+      filterType === "pending"
+        ? o.order_status === "Pending"
+        : filterType === "cod"
+        ? o.payment_method === "cod"
+        : true;
+
+    return matchesSearch && matchesCard;
+  });
 
   return (
     <div className="dashboard">
@@ -43,7 +50,10 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="stats">
-        <div className="stat-card">
+        <div
+          className={`stat-card ${filterType === "" ? "active" : ""}`}
+          onClick={() => setFilterType("")}
+        >
           <FiShoppingBag />
           <div>
             <p>Total Orders</p>
@@ -51,7 +61,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className={`stat-card ${filterType === "" ? "active" : ""}`}
+          onClick={() => setFilterType("")}
+        >
           <FiDollarSign />
           <div>
             <p>Total Revenue</p>
@@ -59,7 +72,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className={`stat-card ${filterType === "pending" ? "active" : ""}`}
+          onClick={() => setFilterType("pending")}
+        >
           <FiTruck />
           <div>
             <p>Pending Orders</p>
@@ -67,7 +83,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="stat-card">
+        <div
+          className={`stat-card ${filterType === "cod" ? "active" : ""}`}
+          onClick={() => setFilterType("cod")}
+        >
           <FiUsers />
           <div>
             <p>COD Orders</p>
@@ -83,7 +102,7 @@ export default function Dashboard() {
           <div className="search">
             <LuSearch />
             <input
-              placeholder="Search Order / User"
+              placeholder="Search Order / User / Payment / Status"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -109,22 +128,16 @@ export default function Dashboard() {
                 <tr key={o.order_id}>
                   <td>#{o.order_id}</td>
                   <td>{o.user_id}</td>
-                  <td>
-                    {new Date(o.created_at).toLocaleDateString()}
-                  </td>
+                  <td>{new Date(o.created_at).toLocaleDateString()}</td>
                   <td>{o.payment_method.toUpperCase()}</td>
                   <td>₹{o.total_amount}</td>
                   <td>
-                    <span
-                      className={`status ${o.order_status.toLowerCase()}`}
-                    >
+                    <span className={`status ${o.order_status.toLowerCase()}`}>
                       {o.order_status}
                     </span>
                   </td>
                   <td>
-                    <button onClick={() => setSelectedOrder(o)}>
-                      View
-                    </button>
+                    <button onClick={() => setSelectedOrder(o)}>View</button>
                   </td>
                 </tr>
               ))}
@@ -143,9 +156,7 @@ export default function Dashboard() {
             </div>
 
             {(() => {
-              const a = JSON.parse(
-                selectedOrder.shipping_address
-              );
+              const a = JSON.parse(selectedOrder.shipping_address);
               return (
                 <>
                   <p><b>Name:</b> {a.name}</p>
@@ -165,156 +176,37 @@ export default function Dashboard() {
         * { box-sizing: border-box; }
         body { margin: 0; }
 
-        .dashboard {
-          padding: 16px;
-          font-family: Inter, sans-serif;
-          background: #f8fafc;
-          min-height: 100vh;
-        }
+        .dashboard { padding: 16px; font-family: Inter, sans-serif; background: #f8fafc; min-height: 100vh; }
 
-        .topbar h1 {
-          color: #1d4ed8;
-          margin-bottom: 4px;
-        }
-
-        .subtitle {
-          color: #64748b;
-          font-size: 14px;
-        }
+        .topbar h1 { color: #1d4ed8; margin-bottom: 4px; }
+        .subtitle { color: #64748b; font-size: 14px; }
 
         /* Stats */
-        .stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-          margin: 20px 0;
-        }
-
-        .stat-card {
-          background: white;
-          padding: 16px;
-          border-radius: 16px;
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          box-shadow: 0 6px 18px rgba(0,0,0,0.05);
-        }
-
-        .stat-card svg {
-          font-size: 24px;
-          color: #1d4ed8;
-        }
-
-        .stat-card p {
-          margin: 0;
-          color: #64748b;
-          font-size: 13px;
-        }
-
-        .stat-card h3 {
-          margin: 0;
-          color: #0f172a;
-        }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 20px 0; }
+        .stat-card { background: white; padding: 16px; border-radius: 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 6px 18px rgba(0,0,0,0.05); cursor: pointer; transition: all 0.2s; }
+        .stat-card svg { font-size: 24px; color: #1d4ed8; }
+        .stat-card p { margin: 0; color: #64748b; font-size: 13px; }
+        .stat-card h3 { margin: 0; color: #0f172a; }
+        .stat-card.active { border: 2px solid #1d4ed8; }
 
         /* Orders */
-        .orders-section {
-          background: white;
-          border-radius: 18px;
-          padding: 16px;
-        }
-
-        .orders-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-          flex-wrap: wrap;
-          gap: 12px;
-        }
-
-        .search {
-          display: flex;
-          gap: 8px;
-          background: #e0f2fe;
-          padding: 8px 12px;
-          border-radius: 10px;
-        }
-
-        .search input {
-          border: none;
-          background: transparent;
-          outline: none;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-        }
-
-        th, td {
-          padding: 12px;
-          border-bottom: 1px solid #e5e7eb;
-        }
-
-        th {
-          background: #f1f5ff;
-          color: #1d4ed8;
-        }
-
-        button {
-          padding: 6px 12px;
-          border-radius: 8px;
-          border: none;
-          background: #e0f2fe;
-          cursor: pointer;
-          color: #1d4ed8;
-        }
-
-        button:hover {
-          background: #1d4ed8;
-          color: white;
-        }
-
-        .status {
-          padding: 4px 10px;
-          border-radius: 14px;
-          font-size: 12px;
-          font-weight: 600;
-        }
-
-        .pending {
-          background: #fef3c7;
-          color: #92400e;
-        }
-
-        .completed {
-          background: #dcfce7;
-          color: #166534;
-        }
+        .orders-section { background: white; border-radius: 18px; padding: 16px; }
+        .orders-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 12px; }
+        .search { display: flex; gap: 8px; background: #e0f2fe; padding: 8px 12px; border-radius: 10px; }
+        .search input { border: none; background: transparent; outline: none; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+        th { background: #f1f5ff; color: #1d4ed8; }
+        button { padding: 6px 12px; border-radius: 8px; border: none; background: #e0f2fe; cursor: pointer; color: #1d4ed8; }
+        button:hover { background: #1d4ed8; color: white; }
+        .status { padding: 4px 10px; border-radius: 14px; font-size: 12px; font-weight: 600; }
+        .pending { background: #fef3c7; color: #92400e; }
+        .completed { background: #dcfce7; color: #166534; }
 
         /* Modal */
-        .modal {
-          position: fixed;
-          inset: 0;
-          background: rgba(0,0,0,0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .modal-box {
-          background: white;
-          padding: 20px;
-          border-radius: 16px;
-          width: 90%;
-          max-width: 400px;
-        }
-
-        .modal-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; }
+        .modal-box { background: white; padding: 20px; border-radius: 16px; width: 90%; max-width: 400px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; }
       `}</style>
     </div>
   );

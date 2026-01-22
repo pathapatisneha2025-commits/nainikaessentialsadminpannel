@@ -54,6 +54,12 @@ export default function AdminLayout() {
       path: "/admin/cod"
     },
     {
+      id: "sales",
+      label: "OrdersSales",
+      icon: <LuShoppingBag size={18} />,
+      path: "/admin/ordersales"
+    },
+    {
       id: "logout",
       label: "Logout",
       icon: <LuLogOut size={18} />,

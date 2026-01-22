@@ -8,6 +8,8 @@ export default function AdminInventory() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [loading, setLoading] = useState(false);
   const [filterCategory, setFilterCategory] = useState("All"); // For filtering
+  const [alerts, setAlerts] = useState([]);
+  const [showModal, setShowModal] = useState(false); // NEW: modal state
 
   const emptyProduct = {
     name: "",
@@ -17,7 +19,9 @@ export default function AdminInventory() {
   };
   const [product, setProduct] = useState(emptyProduct);
 
-  // Fetch categories & products
+  const lowStockThreshold = 20;
+  const criticalStockThreshold = 5;
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -47,11 +51,28 @@ export default function AdminInventory() {
     c.products.map((p) => ({ ...p, categoryName: c.name }))
   );
 
-  // Filtered products
   const displayedProducts =
     filterCategory === "All"
       ? allProducts
       : allProducts.filter((p) => p.categoryName === filterCategory);
+
+  useEffect(() => {
+    const newAlerts = [];
+    displayedProducts.forEach((p) => {
+      p.variants?.forEach((v) => {
+        const stockStatus = getStockStatus(v);
+        if (stockStatus.color !== "green") {
+          newAlerts.push({
+            product: p.name,
+            variant: `${v.size}/${v.color}`,
+            message: stockStatus.message,
+            color: stockStatus.color,
+          });
+        }
+      });
+    });
+    setAlerts(newAlerts);
+  }, [displayedProducts]);
 
   const addCategory = () => {
     if (!newCategory) return;
@@ -65,6 +86,7 @@ export default function AdminInventory() {
   const handleSetActiveCategory = (cat) => {
     setProduct(emptyProduct);
     setActiveCategory(cat);
+    setShowModal(true); // open modal on category click
   };
 
   const handleMainImage = (e) => {
@@ -106,7 +128,7 @@ export default function AdminInventory() {
       const res = await fetch(`${BASE_URL}/add`, { method: "POST", body: formData });
       if (res.ok) {
         alert("Product saved!");
-        window.location.reload(); 
+        window.location.reload();
       }
     } catch (err) {
       console.error(err);
@@ -137,11 +159,41 @@ export default function AdminInventory() {
       thumbnails: prod.thumbnails ? prod.thumbnails.map((t) => ({ url: t })) : [],
       variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
     });
+    setShowModal(true);
+  };
+
+  const getStockStatus = (variant) => {
+    const stock = Number(variant.stock) || 0;
+    if (stock <= criticalStockThreshold)
+      return { color: "red", message: "⚠️ Reorder immediately!" };
+    if (stock <= lowStockThreshold)
+      return { color: "orange", message: "⚠️ Low stock" };
+    return { color: "green", message: "In Stock" };
   };
 
   return (
     <div className="admin">
       <h1>Inventory Management</h1>
+
+      {alerts.length > 0 && (
+        <div className="alerts-container">
+          {alerts.map((a, i) => (
+            <div
+              key={i}
+              style={{
+                background: a.color,
+                padding: "8px",
+                marginBottom: "6px",
+                borderRadius: "6px",
+                color: "#000",
+                fontWeight: "bold",
+              }}
+            >
+              ⚠️ {a.product} ({a.variant}) - {a.message}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="add-category-section">
         <div className="add-category">
@@ -150,7 +202,9 @@ export default function AdminInventory() {
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
           />
-          <button className="add-category-btn" onClick={addCategory}>➕ Add</button>
+          <button className="add-category-btn" onClick={addCategory}>
+            ➕ Add
+          </button>
         </div>
       </div>
 
@@ -162,7 +216,9 @@ export default function AdminInventory() {
         >
           <option value="All">All</option>
           {categories.map((c) => (
-            <option key={c.id} value={c.name}>{c.name}</option>
+            <option key={c.id} value={c.name}>
+              {c.name}
+            </option>
           ))}
         </select>
       </div>
@@ -193,18 +249,39 @@ export default function AdminInventory() {
               <tr key={p.id}>
                 <td>{p.categoryName}</td>
                 <td>{p.name}</td>
-                <td>{p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}</td>
-                <td className="thumbs">{p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}</td>
                 <td>
-                  {p.variants?.map((v, i) => (
-                    <div key={i} className="variant-tag">
-                      {v.size}/{v.color} - ₹{v.price} - Stock: {v.stock}
-                    </div>
+                  {p.main_image && (
+                    <img src={p.main_image} alt="main" className="mini-main" />
+                  )}
+                </td>
+                <td className="thumbs">
+                  {p.thumbnails?.map((t, j) => (
+                    <img key={j} src={t} alt="thumb" />
                   ))}
                 </td>
+                <td>
+                  {p.variants?.map((v, i) => {
+                    const stockStatus = getStockStatus(v);
+                    return (
+                      <div
+                        key={i}
+                        className="variant-tag"
+                        style={{ color: stockStatus.color, fontWeight: "bold" }}
+                        title={stockStatus.message}
+                      >
+                        {v.size}/{v.color} - ₹{v.price} - Stock: {v.stock}{" "}
+                        {stockStatus.color !== "green" && stockStatus.message}
+                      </div>
+                    );
+                  })}
+                </td>
                 <td className="action-cells">
-                  <button className="update-btn" onClick={() => updateProduct(p)}>Edit</button>
-                  <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
+                  <button className="update-btn" onClick={() => updateProduct(p)}>
+                    Edit
+                  </button>
+                  <button className="delete-btn" onClick={() => deleteProduct(p.id)}>
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
@@ -212,55 +289,85 @@ export default function AdminInventory() {
         </table>
       </div>
 
-      {/* Modal */}
-      {activeCategory && (
-        <div className="modal-overlay" onClick={() => setActiveCategory(null)}>
+      {/* Product Modal */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>{product.name ? "Update" : "Add"} Product</h3>
-              <button className="close-x" onClick={() => setActiveCategory(null)}>&times;</button>
+              <h3>{product.name ? "Edit Product" : "Add Product"}</h3>
+              <button className="close-x" onClick={() => setShowModal(false)}>
+                &times;
+              </button>
             </div>
-            <div className="modal-body">
-              <input className="full-input" placeholder="Product Name" value={product.name} onChange={(e) => setProduct({ ...product, name: e.target.value })} />
-              <div className="upload-section">
-               <div>
-  <h4>Main Image</h4>
-  <label className="custom-upload">Choose File
-    <input type="file" onChange={handleMainImage} hidden />
-  </label>
-  {product.mainImage && <img src={product.mainImage.url} className="preview-img-main" />}
-</div>
 
-<div>
-  <h4>Thumbnails</h4>
-  <label className="custom-upload">Choose Files
-    <input type="file" multiple onChange={handleThumbnails} hidden />
-  </label>
-  <div className="thumb-preview">
-    {product.thumbnails.map((img, i) => <img key={i} src={img.url} />)}
-  </div>
-</div>
+            <input
+              className="full-input"
+              placeholder="Product Name"
+              value={product.name}
+              onChange={(e) => setProduct({ ...product, name: e.target.value })}
+            />
 
-              </div>
-              <h4>Variants</h4>
-              <div className="variants-container">
-                {product.variants.map((v, i) => (
-                  <div key={i} className="variant-row">
-                    <select value={v.size} onChange={(e) => updateVariant(i, "size", e.target.value)}>
-                      <option value="">Size</option><option>S</option><option>M</option><option>L</option><option>XL</option>
-                    </select>
-                    <input placeholder="Color" value={v.color} onChange={(e) => updateVariant(i, "color", e.target.value)} />
-                    <input type="number" placeholder="Price" value={v.price} onChange={(e) => updateVariant(i, "price", e.target.value)} />
-                    <input type="number" placeholder="Stock" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} />
-                  </div>
+            <div className="upload-section">
+              <label className="custom-upload">
+                Upload Main Image
+                <input type="file" onChange={handleMainImage} style={{ display: "none" }} />
+              </label>
+              {product.mainImage?.url && (
+                <img src={product.mainImage.url} className="preview-img-main" alt="main" />
+              )}
+
+              <label className="custom-upload">
+                Upload Thumbnails
+                <input type="file" multiple onChange={handleThumbnails} style={{ display: "none" }} />
+              </label>
+              <div className="thumb-preview">
+                {product.thumbnails.map((t, i) => (
+                  <img key={i} src={t.url} alt="thumb" />
                 ))}
               </div>
-              <button onClick={addVariant} className="add-variant-btn">+ Add Variant</button>
-              <button className="save-btn" onClick={saveProduct} disabled={loading}>{loading ? "Saving..." : "Save Changes"}</button>
             </div>
+
+            <div>
+              {product.variants.map((v, i) => (
+                <div className="variant-row" key={i}>
+                  <input
+                    placeholder="Size"
+                    value={v.size}
+                    onChange={(e) => updateVariant(i, "size", e.target.value)}
+                  />
+                  <input
+                    placeholder="Color"
+                    value={v.color}
+                    onChange={(e) => updateVariant(i, "color", e.target.value)}
+                  />
+                  <input
+                    placeholder="Price"
+                    type="number"
+                    value={v.price}
+                    onChange={(e) => updateVariant(i, "price", e.target.value)}
+                  />
+                  <input
+                    placeholder="Stock"
+                    type="number"
+                    value={v.stock}
+                    onChange={(e) => updateVariant(i, "stock", e.target.value)}
+                  />
+                </div>
+              ))}
+              <button className="add-variant-btn" onClick={addVariant}>
+                + Add Variant
+              </button>
+            </div>
+
+            <button className="save-btn" onClick={saveProduct}>
+              Save Product
+            </button>
           </div>
         </div>
       )}
+
+      
+
 
       <style>{`
         .admin { padding: 15px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: #f8fafc; min-height: 100vh; }
@@ -289,21 +396,8 @@ export default function AdminInventory() {
         .full-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
         .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
         .custom-upload { display: block; background: #f8fafc; padding: 10px; text-align: center; border: 1px dashed #0b5ed7; border-radius: 8px; cursor: pointer; color: #0b5ed7; font-size: 14px; }
-.preview-img-main { 
-  width: 50px;  /* smaller main image */
-  height: 50px; 
-  object-fit: cover; 
-  margin-top: 10px; 
-  border-radius: 6px; 
-}
-
-.thumb-preview img { 
-  width: 35px;  /* smaller thumbnails */
-  height: 35px; 
-  margin-right: 4px; 
-  border-radius: 4px; 
-  object-fit: cover;
-}
+        .preview-img-main { width: 50px; height: 50px; object-fit: cover; margin-top: 10px; border-radius: 6px; }
+        .thumb-preview img { width: 35px; height: 35px; margin-right: 4px; border-radius: 4px; object-fit: cover; }
         .variant-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; }
         .variant-row input, .variant-row select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
         .add-variant-btn { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #0b5ed7; color: #0b5ed7; background: #fff; border-radius: 8px; font-weight: bold; }
