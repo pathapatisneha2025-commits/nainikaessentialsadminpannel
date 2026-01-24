@@ -35,6 +35,12 @@ export default function AdminLayout() {
       icon: <LuPackage size={18} />,
       path: "/admin/products"
     },
+     {
+      id: "bestselelr",
+      label: "bestsellers",
+      icon: <LuPackage size={18} />,
+      path: "/admin/bestsellers"
+    },
     {
       id: "orders",
       label: "Orders",

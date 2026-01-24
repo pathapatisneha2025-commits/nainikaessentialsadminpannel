@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import AdminCoupons from "./pages/coupons";
 import AdminCodPanel from "./pages/Admincodpannel";
 import SalesReport from "./pages/SalesReport";
+import BestSellersAdmin from "./pages/Adminbestseller";
 
 export default function App() {
   return (
@@ -36,7 +37,7 @@ export default function App() {
             <Route path="cod" element={<AdminCodPanel/>} />
             <Route path="ordersales" element={<SalesReport/>} />
 
-          {/* <Route path="sales" element={<CategoryOrdersPage />} /> */}
+          <Route path="bestsellers" element={<BestSellersAdmin />} />
         </Route>
 
         {/* Catch-all 404 page */}
