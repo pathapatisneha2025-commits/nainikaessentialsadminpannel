@@ -746,13 +746,18 @@ h1 {
 
 /* ======= MOBILE ======= */
 @media (max-width: 768px) {
-  .modal-box { max-height: 90vh; width: 100%; padding: 15px; }
+  .modal-box { max-height: calc(100vh - 40px); width: 100%; padding: 15px; }
   .upload-section { grid-template-columns: 1fr; }
   .variant-row { grid-template-columns: 1fr 1fr; }
   .action-cells { flex-direction: column; gap: 6px; }
   .mini-main { width: 35px; height: 35px; }
   .thumbs img { width: 25px; height: 25px; }
-  .variant-tag { font-size: 10px; max-width: 70px; padding: 2px 4px; }
+  .variant-tag { font-size: 10px; max-width: 100%; white-space: normal; padding: 2px 4px; }
+  .table-wrapper { overflow-x: auto; }
+  .product-table { display: table; width: 100%; min-width: unset; table-layout: auto; }
+  .product-table th, .product-table td { font-size: 12px; padding: 6px; white-space: normal; }
+}
+
 
   /* ===== TABLE FIX ===== */
   .table-wrapper { overflow-x: auto; }
