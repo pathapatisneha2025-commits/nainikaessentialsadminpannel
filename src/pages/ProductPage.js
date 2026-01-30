@@ -462,12 +462,13 @@ html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  overflow-y: auto; /* ✅ page can scroll vertically */
   font-family: sans-serif;
   background: #f8fafc;
 }
 
 body.modal-open {
-  overflow: hidden;
+  /* allow page scroll even with modal open */
   position: relative;
 }
 
@@ -478,6 +479,7 @@ body.modal-open {
   margin: 0 auto;
   min-height: 100vh;
   box-sizing: border-box;
+  overflow-y: visible; /* ✅ content can expand */
 }
 
 h1 {
@@ -551,8 +553,8 @@ h1 {
 /* ======= TABLE ======= */
 .table-wrapper {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow-x: auto; /* horizontal scroll */
+  overflow-y: visible; /* vertical page scroll */
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   background: #fff;
@@ -623,7 +625,7 @@ h1 {
   justify-content: center;
   z-index: 9999;
   padding: 10px;
-  overflow-y: auto;
+  overflow-y: auto; /* ✅ modal scroll */
 }
 
 .modal-box {
@@ -633,7 +635,7 @@ h1 {
   max-height: 90vh;
   padding: 20px;
   border-radius: 16px;
-  overflow-y: auto;
+  overflow-y: auto; /* ✅ modal scroll */
   position: relative;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
@@ -826,6 +828,7 @@ h1 {
   }
 }
 `}</style>
+
 
 
 
