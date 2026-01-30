@@ -461,7 +461,7 @@ const removeProductDetail = (i) => {
 html, body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: auto; /* page scroll */
   font-family: sans-serif;
   background: #f8fafc;
