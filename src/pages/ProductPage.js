@@ -563,6 +563,7 @@ h1 {
 
 .product-table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   table-layout: auto;
 }
@@ -574,8 +575,7 @@ h1 {
   border-bottom: 1px solid #eee;
   font-size: 14px;
   vertical-align: middle;
-  white-space: normal;
-  word-break: break-word;
+  white-space: nowrap;
 }
 
 .mini-main {
@@ -746,36 +746,87 @@ h1 {
 
 /* ======= MOBILE ======= */
 @media (max-width: 768px) {
-  .modal-box { max-height: calc(100vh - 40px); width: 100%; padding: 15px; }
-  .upload-section { grid-template-columns: 1fr; }
-  .variant-row { grid-template-columns: 1fr 1fr; }
-  .action-cells { flex-direction: column; gap: 6px; }
-  .mini-main { width: 35px; height: 35px; }
-  .thumbs img { width: 25px; height: 25px; }
-  .variant-tag { font-size: 10px; max-width: 100%; white-space: normal; padding: 2px 4px; }
-  .table-wrapper { overflow-x: auto; }
-  .product-table { display: table; width: 100%; min-width: unset; table-layout: auto; }
-  .product-table th, .product-table td { font-size: 12px; padding: 6px; white-space: normal; }
-}
 
-
-  /* ===== TABLE FIX ===== */
-  .table-wrapper { overflow-x: auto; }
-  .product-table {
-    display: table;      /* restore table layout */
-    width: 100%;         /* fill wrapper */
-    min-width: 600px;    /* optional: prevent shrinking too much */
-    table-layout: auto;
+  .modal-overlay {
+    padding: 10px;
+    overflow-y: auto;
   }
+  .modal-box {
+    width: 95%;
+    max-height: 90vh;
+    padding: 15px;
+    overflow-y: auto;
+  }
+
+  .upload-section {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .variant-row {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  }
+
+  .variant-tag {
+    font-size: 10px;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    white-space: normal;
+    padding: 2px 4px;
+  }
+
   .product-table th,
   .product-table td {
     font-size: 12px;
-    padding: 8px;
-    white-space: nowrap;  /* keep variants inline */
+    padding: 6px;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .mini-main {
+    width: 35px;
+    height: 35px;
+  }
+
+  .thumbs img {
+    width: 25px;
+    height: 25px;
+  }
+
+  .action-cells {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+
+  .add-category input {
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .add-category button {
+    padding: 0 12px;
+    font-size: 14px;
+  }
+
+  .modal-header h3 {
+    font-size: 16px;
+  }
+
+  .close-x {
+    font-size: 24px;
+  }
+
+  .full-input {
+    font-size: 14px;
+    padding: 10px;
   }
 }
-
 `}</style>
+
 
 
 
