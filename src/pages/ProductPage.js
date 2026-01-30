@@ -478,10 +478,13 @@ body.modal-open {
 /* ======= PAGE ======= */
 .page {
   padding: 15px;
-  max-width: 1200px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+  overflow-x: hidden;   /* ✅ ADD THIS */
 }
+
 
 
 
@@ -556,10 +559,11 @@ h1 {
 
 /* Table wrapper */
 .table-wrapper {
-  width: 100%;
+  
   max-height: 60vh;      /* ✅ table scrolls internally */
-  overflow-x: auto;
-  overflow-y: auto;      /* ✅ vertical table scroll */
+   width: 100%;
+  overflow-x: auto;   /* ✅ */
+  overflow-y: auto;  /* ✅ vertical table scroll */
   background: #fff;
   border-radius: 12px;
 }
@@ -567,10 +571,11 @@ h1 {
 
 /* Table itself */
 .product-table {
-  width: 100%;
+  width: max-content;   /* ✅ let content decide width */
+  min-width: 900px;     /* ✅ still scrolls */
   border-collapse: collapse;
-  min-width: 900px; /* ensures horizontal scroll if needed */
 }
+
 
 /* Table header */
 .product-table th {
@@ -956,35 +961,12 @@ h1 {
   }
    
 }
- @media (max-width: 768px) {
-  /* ✅ Allow FULL PAGE SCROLL */
-  html, body {
-    height: auto;
-    overflow-y: auto;
-    overflow-x: auto;   /* ✅ allow horizontal scroll */
-  }
-
-  /* ✅ Remove 100vh trap */
-  .admin {
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-  }
-
-  /* ✅ Let table grow naturally */
-  .table-wrapper {
-    max-height: none;
-    overflow-x: auto;
-    overflow-y: visible;
-  }
-
-  /* Optional: smoother mobile scroll */
-  body {
-    -webkit-overflow-scrolling: touch;
-  }
+ 
 }
 
-}
+
+
+
 `}</style>
 
 
