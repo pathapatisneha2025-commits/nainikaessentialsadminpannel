@@ -249,7 +249,7 @@ const removeProductDetail = (i) => {
 
 
   return (
-    <div className="admin">
+    <div className="page">
       <h1>Inventory Management</h1>
 
       {alerts.length > 0 && (
@@ -323,38 +323,42 @@ const removeProductDetail = (i) => {
           </thead>
           <tbody>
             {displayedProducts.map((p) => (
-              <tr key={p.id}>
-                <td>{p.categoryName}</td>
-                <td>{p.name}</td>
-                <td>
-                  {p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}
-                </td>
-                <td className="thumbs">
-                  {p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}
-                </td>
-                <td>
-                  {p.variants?.map((v, i) => {
-                    const stockStatus = getStockStatus(v);
-                    const finalPrice = getDiscountedPrice(v.price, p.discount);
-                    return (
-                      <div
-                        key={i}
-                        className="variant-tag"
-                        style={{ color: stockStatus.color, fontWeight: "bold" }}
-                        title={stockStatus.message}
-                      >
-                        {v.size}/{v.color} - ₹{v.price}
-                        {p.discount ? ` → ₹${finalPrice} (-${p.discount}%)` : ""}
-                        - Stock: {v.stock} {stockStatus.color !== "green" && stockStatus.message}
-                      </div>
-                    );
-                  })}
-                </td>
-                <td className="action-cells">
-                  <button className="update-btn" onClick={() => updateProduct(p)}>Edit</button>
-                  <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
-                </td>
-              </tr>
+            <tr key={p.id}>
+  <td>{p.categoryName}</td>
+  <td>{p.name}</td>
+  <td>
+    {p.main_image && <img src={p.main_image} alt="main" className="mini-main" />}
+  </td>
+  <td className="thumbs">
+    {p.thumbnails?.map((t, j) => <img key={j} src={t} alt="thumb" />)}
+  </td>
+  <td className="variants-cell">
+    <div className="variants-container">
+      {p.variants?.map((v, i) => {
+        const stockStatus = getStockStatus(v);
+        const finalPrice = getDiscountedPrice(v.price, p.discount);
+        return (
+          <div
+            key={i}
+            className="variant-tag"
+            style={{ color: stockStatus.color }}
+            title={stockStatus.message}
+          >
+            {v.size}/{v.color} - ₹{v.price}
+            {p.discount ? ` → ₹${finalPrice} (-${p.discount}%)` : ""}
+            <br />
+            Stock: {v.stock} {stockStatus.color !== "green" && stockStatus.message}
+          </div>
+        );
+      })}
+    </div>
+  </td>
+  <td className="action-cells">
+    <button className="update-btn" onClick={() => updateProduct(p)}>Edit</button>
+    <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
+  </td>
+</tr>
+
             ))}
           </tbody>
         </table>
@@ -461,25 +465,26 @@ const removeProductDetail = (i) => {
 html, body {
   margin: 0;
   padding: 0;
-  overflow-x: auto;
-  overflow-y: auto; /* page scroll */
-  font-family: sans-serif;
-  background: #f8fafc;
+  height: 100%;
 }
 
+
 body.modal-open {
+  overflow: hidden;
   position: relative;
 }
 
+
 /* ======= PAGE ======= */
-.admin {
+.page {
   padding: 15px;
   max-width: 1200px;
   margin: 0 auto;
-  min-height: 100vh;
   box-sizing: border-box;
-  overflow-y: visible;
 }
+
+
+
 
 h1 {
   color: #0b5ed7;
@@ -549,35 +554,159 @@ h1 {
   color: #000;
 }
 
-/* ======= TABLE ======= */
+/* Table wrapper */
 .table-wrapper {
   width: 100%;
-
-  overflow-y: visible;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
+  max-height: 60vh;      /* ✅ table scrolls internally */
+  overflow-x: auto;
+  overflow-y: auto;      /* ✅ vertical table scroll */
   background: #fff;
   border-radius: 12px;
-  margin-top: 20px;
-  box-sizing: border-box;
-  max-height: 70vh; /* optional vertical limit */
 }
 
+
+/* Table itself */
 .product-table {
   width: 100%;
-  min-width: 900px; /* ✅ ensures horizontal scroll appears if table is too wide */
   border-collapse: collapse;
-  table-layout: auto;
+  min-width: 900px; /* ensures horizontal scroll if needed */
 }
 
-.product-table th,
-.product-table td {
-  padding: 12px;
+/* Table header */
+.product-table th {
+  position: sticky;
+  top: 0;
+  background: #0b5ed7;
+  color: #fff;
+  font-weight: 600;
   text-align: left;
+  padding: 12px 10px;
+  border-bottom: 2px solid #0a4db7;
+}
+
+/* Table cells */
+.product-table td {
+  padding: 12px 10px;
   border-bottom: 1px solid #eee;
+  vertical-align: top;
   font-size: 14px;
-  vertical-align: middle;
-  white-space: nowrap; /* keeps variants on single line */
+  word-break: break-word;
+}
+
+/* Alternating row colors */
+.product-table tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
+/* Row hover highlight */
+.product-table tbody tr:hover {
+  background: #e3f2fd;
+  transition: 0.2s;
+}
+
+/* Image thumbnails */
+.mini-main {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.thumbs img {
+  width: 30px;
+  height: 30px;
+  margin-right: 4px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+/* Variant tags */
+.variant-tag {
+  display: inline-block;
+  max-width: 100%;
+  font-size: 12px;
+  padding: 4px 6px;
+  margin: 2px 2px 2px 0;
+  border-radius: 6px;
+  background: #f1f5f9;
+  font-weight: 600;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Action buttons */
+.action-cells {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.update-btn,
+.delete-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.update-btn {
+  background: #0b5ed7;
+  color: #fff;
+}
+
+.update-btn:hover {
+  background: #094bb5;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: #fff;
+}
+
+.delete-btn:hover {
+  background: #c81d1d;
+}
+
+/* Variants cell */
+.product-table td.variants-cell {
+  max-width: 250px;
+  white-space: normal;
+  vertical-align: top;
+}
+
+/* Scrollbar style (optional) */
+.table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+.table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+
+/* Container to wrap variant tags */
+.variants-container {
+  display: flex;
+  flex-wrap: wrap;          /* wrap tags to new line */
+  gap: 4px;                 /* spacing between tags */
+}
+
+/* Each variant appears as a small card */
+.variant-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  margin-bottom: 4px;
+  line-height: 1.2;
+  word-break: break-word;
 }
 
 .mini-main {
@@ -825,6 +954,36 @@ h1 {
     font-size: 14px;
     padding: 10px;
   }
+   
+}
+ @media (max-width: 768px) {
+  /* ✅ Allow FULL PAGE SCROLL */
+  html, body {
+    height: auto;
+    overflow-y: auto;
+    overflow-x: auto;   /* ✅ allow horizontal scroll */
+  }
+
+  /* ✅ Remove 100vh trap */
+  .admin {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  /* ✅ Let table grow naturally */
+  .table-wrapper {
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  /* Optional: smoother mobile scroll */
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 }
 `}</style>
 
