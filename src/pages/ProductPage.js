@@ -462,13 +462,12 @@ html, body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
-  overflow-y: auto; /* ✅ page can scroll vertically */
+  overflow-y: auto; /* page scroll */
   font-family: sans-serif;
   background: #f8fafc;
 }
 
 body.modal-open {
-  /* allow page scroll even with modal open */
   position: relative;
 }
 
@@ -479,7 +478,7 @@ body.modal-open {
   margin: 0 auto;
   min-height: 100vh;
   box-sizing: border-box;
-  overflow-y: visible; /* ✅ content can expand */
+  overflow-y: visible;
 }
 
 h1 {
@@ -554,18 +553,19 @@ h1 {
 .table-wrapper {
   width: 100%;
   overflow-x: auto; /* horizontal scroll */
-  overflow-y: visible; /* vertical page scroll */
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
   background: #fff;
   border-radius: 12px;
   margin-top: 20px;
   box-sizing: border-box;
+  max-height: 70vh; /* optional vertical limit */
 }
 
 .product-table {
   width: 100%;
-  min-width: 600px;
+  min-width: 900px; /* ✅ ensures horizontal scroll appears if table is too wide */
   border-collapse: collapse;
   table-layout: auto;
 }
@@ -577,7 +577,7 @@ h1 {
   border-bottom: 1px solid #eee;
   font-size: 14px;
   vertical-align: middle;
-  white-space: nowrap;
+  white-space: nowrap; /* keeps variants on single line */
 }
 
 .mini-main {
@@ -625,7 +625,7 @@ h1 {
   justify-content: center;
   z-index: 9999;
   padding: 10px;
-  overflow-y: auto; /* ✅ modal scroll */
+  overflow-y: auto; /* modal scroll */
 }
 
 .modal-box {
@@ -635,7 +635,7 @@ h1 {
   max-height: 90vh;
   padding: 20px;
   border-radius: 16px;
-  overflow-y: auto; /* ✅ modal scroll */
+  overflow-y: auto; /* modal scroll */
   position: relative;
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
 }
@@ -748,7 +748,6 @@ h1 {
 
 /* ======= MOBILE ======= */
 @media (max-width: 768px) {
-
   .modal-overlay {
     padding: 10px;
     overflow-y: auto;
@@ -781,8 +780,8 @@ h1 {
   .product-table td {
     font-size: 12px;
     padding: 6px;
-    white-space: normal;
-    word-break: break-word;
+    white-space: nowrap;
+    word-break: normal;
   }
 
   .mini-main {
@@ -828,6 +827,7 @@ h1 {
   }
 }
 `}</style>
+
 
 
 
