@@ -9,10 +9,21 @@ const BestSellersAdmin = () => {
   const [name, setName] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [discount, setDiscount] = useState(0);
   const [mainImage, setMainImage] = useState(null);
   const [thumbnails, setThumbnails] = useState([]);
   const [variants, setVariants] = useState([{ size: "", color: "", price: 0, stock: 0 }]);
-  const [type, setType] = useState("bestseller"); // <-- type state
+  const [type, setType] = useState("bestseller");
+
+  // Dynamic product details state
+  const [productDetails, setProductDetails] = useState([
+    { key: "Brand", value: "" },
+    { key: "Fabric", value: "" },
+    { key: "Fit", value: "" },
+    { key: "Sleeve", value: "" },
+    { key: "Occasion", value: "" },
+    { key: "Made In", value: "" },
+  ]);
 
   // Fetch all products
   const fetchProducts = async () => {
@@ -39,10 +50,19 @@ const BestSellersAdmin = () => {
       setName(data.name);
       setCategory(data.category);
       setDescription(data.description);
+      setDiscount(data.discount || 0);
       setVariants(data.variants || []);
       setType(data.type || "bestseller");
       setEditingId(id);
       setShowForm(true);
+
+      // Load existing product details or initialize empty array
+      const details = data.product_details || [];
+      if (details.length > 0) {
+        setProductDetails(details.map(d => ({ key: d.label, value: d.value })));
+      } else {
+        setProductDetails([{ key: "", value: "" }]);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -60,6 +80,19 @@ const BestSellersAdmin = () => {
     }
   };
 
+  // Update a product detail
+  const updateProductDetail = (index, field, value) => {
+    const updated = [...productDetails];
+    updated[index][field] = value;
+    setProductDetails(updated);
+  };
+
+  // Add a new empty product detail
+  const addProductDetail = () => setProductDetails([...productDetails, { key: "", value: "" }]);
+
+  // Remove a product detail
+  const removeProductDetail = (index) => setProductDetails(productDetails.filter((_, i) => i !== index));
+
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,8 +100,14 @@ const BestSellersAdmin = () => {
     formData.append("name", name);
     formData.append("category", category);
     formData.append("description", description);
+    formData.append("discount", discount);
+
+    // Convert structured product details to backend format
+    const detailsJSON = productDetails.filter(d => d.key).map(d => ({ label: d.key, value: d.value }));
+    formData.append("product_details", JSON.stringify(detailsJSON));
+
     formData.append("variants", JSON.stringify(variants));
-    formData.append("type", type); // <-- append type
+    formData.append("type", type);
     if (mainImage) formData.append("mainImage", mainImage);
     thumbnails.forEach(file => formData.append("thumbnails", file));
 
@@ -82,9 +121,11 @@ const BestSellersAdmin = () => {
       if (!res.ok) throw new Error("Failed to submit form");
 
       // Reset form
-      setName(""); setCategory(""); setDescription(""); setType("bestseller");
+      setName(""); setCategory(""); setDescription(""); setDiscount(0);
+      setProductDetails([{ key: "", value: "" }]);
       setMainImage(null); setThumbnails([]);
       setVariants([{ size: "", color: "", price: 0, stock: 0 }]);
+      setType("bestseller");
       setEditingId(null);
       setShowForm(false);
       fetchProducts();
@@ -123,9 +164,7 @@ const BestSellersAdmin = () => {
   return (
     <div style={styles.container}>
       <h2 style={styles.h2}>Product Admin Panel</h2>
-      <button style={styles.button} onClick={() => { setShowForm(true); setEditingId(null); }}>
-        Add New Product
-      </button>
+      <button style={styles.button} onClick={() => { setShowForm(true); setEditingId(null); }}>Add New Product</button>
 
       {showForm && (
         <div style={styles.formContainer}>
@@ -134,12 +173,33 @@ const BestSellersAdmin = () => {
             <input style={styles.input} type="text" placeholder="Name" value={name} onChange={e => setName(e.target.value)} required />
             <input style={styles.input} type="text" placeholder="Category" value={category} onChange={e => setCategory(e.target.value)} />
             <textarea style={styles.textarea} placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
+            <input style={styles.input} type="number" placeholder="Discount (%)" value={discount} onChange={e => setDiscount(e.target.value)} />
 
-            {/* Type selector */}
+            <h4 style={styles.h4}>Product Details</h4>
+            {productDetails.map((d, i) => (
+              <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "5px" }}>
+                <input
+                  style={styles.input}
+                  placeholder="Label"
+                  value={d.key}
+                  onChange={e => updateProductDetail(i, "key", e.target.value)}
+                />
+                <input
+                  style={styles.input}
+                  placeholder="Value"
+                  value={d.value}
+                  onChange={e => updateProductDetail(i, "value", e.target.value)}
+                />
+                <button type="button" style={styles.deleteButton} onClick={() => removeProductDetail(i)}>Remove</button>
+              </div>
+            ))}
+            <button type="button" style={styles.button} onClick={addProductDetail}>Add Detail</button>
+
             <select style={styles.input} value={type} onChange={e => setType(e.target.value)}>
               <option value="bestseller">Best Seller</option>
               <option value="featured">Featured</option>
               <option value="newarrival">New Arrival</option>
+              <option value="todaysoffers">Todays Offers</option>
             </select>
 
             <input type="file" onChange={e => setMainImage(e.target.files[0])} />
@@ -157,7 +217,9 @@ const BestSellersAdmin = () => {
             ))}
             <button type="button" style={styles.button} onClick={addVariant}>Add Variant</button>
 
-            <button type="submit" style={styles.button}>{editingId ? "Update" : "Add"} Product</button>
+<button type="submit" style={styles.button}>
+  {editingId ? "Update Product" : "Add Product"}
+</button>
             <button type="button" style={{ ...styles.button, backgroundColor: "#7f8c8d" }} onClick={() => setShowForm(false)}>Cancel</button>
           </form>
         </div>
@@ -173,6 +235,9 @@ const BestSellersAdmin = () => {
                 <th style={styles.th}>Name</th>
                 <th style={styles.th}>Category</th>
                 <th style={styles.th}>Type</th>
+                <th style={styles.th}>Discount</th>
+                <th style={styles.th}>Description</th>
+                <th style={styles.th}>Product Details</th>
                 <th style={styles.th}>Main Image</th>
                 <th style={styles.th}>Thumbnails</th>
                 <th style={styles.th}>Variants</th>
@@ -186,6 +251,9 @@ const BestSellersAdmin = () => {
                   <td style={styles.td}>{p.name}</td>
                   <td style={styles.td}>{p.category}</td>
                   <td style={styles.td}>{p.type}</td>
+                  <td style={styles.td}>{p.discount || 0}%</td>
+                  <td style={styles.td}>{p.description}</td>
+                  <td style={styles.td}><pre>{JSON.stringify(p.product_details, null, 2)}</pre></td>
                   <td style={styles.td}>{p.main_image && <img src={p.main_image} alt="main" style={styles.imageThumb} />}</td>
                   <td style={styles.td}>{p.thumbnails?.map((t, idx) => <img key={idx} src={t} alt="thumb" style={styles.imageThumb} />)}</td>
                   <td style={styles.td}>

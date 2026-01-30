@@ -8,7 +8,8 @@ import {
   LuX,
   LuLogOut,
   LuIndianRupee,
-  LuTicket
+  LuTicket,
+  LuMail
 } from "react-icons/lu";
 
 export default function AdminLayout() {
@@ -64,6 +65,12 @@ export default function AdminLayout() {
       label: "OrdersSales",
       icon: <LuShoppingBag size={18} />,
       path: "/admin/ordersales"
+    },
+      {
+      id: "contact",
+      label: "Customermessages",
+      icon: <LuMail size={18} />,
+      path: "/admin/contact"
     },
     {
       id: "logout",

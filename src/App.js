@@ -12,6 +12,7 @@ import AdminCoupons from "./pages/coupons";
 import AdminCodPanel from "./pages/Admincodpannel";
 import SalesReport from "./pages/SalesReport";
 import BestSellersAdmin from "./pages/Adminbestseller";
+import AdminContactMessages from "./pages/AdminContacPage";
 
 export default function App() {
   return (
@@ -38,6 +39,8 @@ export default function App() {
             <Route path="ordersales" element={<SalesReport/>} />
 
           <Route path="bestsellers" element={<BestSellersAdmin />} />
+                    <Route path="contact" element={<AdminContactMessages />} />
+
         </Route>
 
         {/* Catch-all 404 page */}

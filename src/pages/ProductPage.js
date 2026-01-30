@@ -17,11 +17,21 @@ export default function AdminInventory() {
     mainImage: null,
     thumbnails: [],
     variants: [{ size: "", color: "", price: "", stock: "" }],
+    discount: "", // New field
+     description: "",              // ✅ NEW
+  productDetails: [{ key: "", value: "" }], // ✅ NEW
   };
   const [product, setProduct] = useState(emptyProduct);
 
   const lowStockThreshold = 20;
   const criticalStockThreshold = 5;
+useEffect(() => {
+  if (showModal) {
+    document.body.classList.add("modal-open");
+  } else {
+    document.body.classList.remove("modal-open");
+  }
+}, [showModal]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -85,7 +95,7 @@ export default function AdminInventory() {
   const handleSetActiveCategory = (cat) => {
     setProduct(emptyProduct);
     setActiveCategory(cat);
-    setEditingProduct(null); // Adding new product
+    setEditingProduct(null);
     setShowModal(true);
   };
 
@@ -114,19 +124,27 @@ export default function AdminInventory() {
     setProduct({ ...product, variants });
   };
 
+
   const saveProduct = async () => {
     if (!activeCategory) return alert("Select a category");
     if (!product.name) return alert("Enter product name");
-
+const productDetailsObject = {};
+product.productDetails.forEach(d => {
+  if (d.key && d.value) productDetailsObject[d.key] = d.value;
+});
     const formData = new FormData();
     formData.append("name", product.name);
     formData.append("category", activeCategory.name);
     formData.append("variants", JSON.stringify(product.variants));
-
+    formData.append("discount", product.discount || 0);
+// ✅ ADD THESE TWO LINES (YOU MISSED THIS)
+  formData.append("description", product.description || "");
+  formData.append("product_details", JSON.stringify(productDetailsObject));
     if (product.mainImage?.file) formData.append("mainImage", product.mainImage.file);
     product.thumbnails.forEach((thumb) => {
       if (thumb.file) formData.append("thumbnails", thumb.file);
     });
+    
 
     try {
       setLoading(true);
@@ -135,6 +153,7 @@ export default function AdminInventory() {
         res = await fetch(`${BASE_URL}/update/${editingProduct.id}`, {
           method: "PUT",
           body: formData,
+          
         });
       } else {
         res = await fetch(`${BASE_URL}/add`, {
@@ -172,18 +191,29 @@ export default function AdminInventory() {
     }
   };
 
-  const updateProduct = (prod) => {
-    const cat = categories.find((c) => c.name === prod.category);
-    setActiveCategory(cat);
-    setProduct({
-      name: prod.name,
-      mainImage: { url: prod.main_image },
-      thumbnails: prod.thumbnails ? prod.thumbnails.map((t) => ({ url: t })) : [],
-      variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
-    });
-    setEditingProduct(prod);
-    setShowModal(true);
-  };
+const updateProduct = (prod) => {
+  const cat = categories.find((c) => c.name === prod.category);
+  setActiveCategory(cat);
+
+  setProduct({
+    name: prod.name,
+    mainImage: { url: prod.main_image },
+    thumbnails: prod.thumbnails
+      ? prod.thumbnails.map((t) => ({ url: t }))
+      : [],
+    variants: prod.variants || [{ size: "", color: "", price: "", stock: "" }],
+    discount: prod.discount || "",
+    description: prod.description || "", // ✅ LOAD
+   productDetails: prod.product_details
+  ? Object.entries(prod.product_details).map(([key, value]) => ({ key, value }))
+  : [{ key: "", value: "" }],
+// ✅ LOAD
+  });
+
+  setEditingProduct(prod);
+  setShowModal(true);
+};
+
 
   const getStockStatus = (variant) => {
     const stock = Number(variant.stock) || 0;
@@ -193,6 +223,30 @@ export default function AdminInventory() {
       return { color: "orange", message: "⚠️ Low stock" };
     return { color: "green", message: "In Stock" };
   };
+
+  const getDiscountedPrice = (price, discount) => {
+    const p = Number(price) || 0;
+    const d = Number(discount) || 0;
+    return Math.round(p - (p * d) / 100);
+  };
+  const addProductDetail = () => {
+  setProduct({
+    ...product,
+    productDetails: [...product.productDetails, { key: "", value: "" }],
+  });
+};
+
+const updateProductDetail = (i, field, value) => {
+  const details = [...product.productDetails];
+  details[i][field] = value;
+  setProduct({ ...product, productDetails: details });
+};
+
+const removeProductDetail = (i) => {
+  const details = product.productDetails.filter((_, idx) => idx !== i);
+  setProduct({ ...product, productDetails: details });
+};
+
 
   return (
     <div className="admin">
@@ -281,6 +335,7 @@ export default function AdminInventory() {
                 <td>
                   {p.variants?.map((v, i) => {
                     const stockStatus = getStockStatus(v);
+                    const finalPrice = getDiscountedPrice(v.price, p.discount);
                     return (
                       <div
                         key={i}
@@ -288,19 +343,16 @@ export default function AdminInventory() {
                         style={{ color: stockStatus.color, fontWeight: "bold" }}
                         title={stockStatus.message}
                       >
-                        {v.size}/{v.color} - ₹{v.price} - Stock: {v.stock}{" "}
-                        {stockStatus.color !== "green" && stockStatus.message}
+                        {v.size}/{v.color} - ₹{v.price}
+                        {p.discount ? ` → ₹${finalPrice} (-${p.discount}%)` : ""}
+                        - Stock: {v.stock} {stockStatus.color !== "green" && stockStatus.message}
                       </div>
                     );
                   })}
                 </td>
                 <td className="action-cells">
-                  <button className="update-btn" onClick={() => updateProduct(p)}>
-                    Edit
-                  </button>
-                  <button className="delete-btn" onClick={() => deleteProduct(p.id)}>
-                    Delete
-                  </button>
+                  <button className="update-btn" onClick={() => updateProduct(p)}>Edit</button>
+                  <button className="delete-btn" onClick={() => deleteProduct(p.id)}>Delete</button>
                 </td>
               </tr>
             ))}
@@ -313,12 +365,8 @@ export default function AdminInventory() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>
-                {editingProduct ? "Edit Product" : `Add Product to ${activeCategory?.name}`}
-              </h3>
-              <button className="close-x" onClick={() => setShowModal(false)}>
-                &times;
-              </button>
+              <h3>{editingProduct ? "Edit Product" : `Add Product to ${activeCategory?.name}`}</h3>
+              <button className="close-x" onClick={() => setShowModal(false)}>&times;</button>
             </div>
 
             <input
@@ -327,6 +375,49 @@ export default function AdminInventory() {
               value={product.name}
               onChange={(e) => setProduct({ ...product, name: e.target.value })}
             />
+
+            {/* Discount Input */}
+            <input
+              className="full-input"
+              placeholder="Discount (%)"
+              type="number"
+              value={product.discount}
+              onChange={(e) => setProduct({ ...product, discount: e.target.value })}
+            />
+            <textarea
+  className="full-input"
+  placeholder="Product Description"
+  rows={4}
+  value={product.description}
+  onChange={(e) => setProduct({ ...product, description: e.target.value })}
+/>
+<h4 style={{ margin: "10px 0" }}>Product Details</h4>
+
+{product.productDetails.map((d, i) => (
+  <div key={i} className="variant-row">
+    <input
+      placeholder="Label (e.g. Fabric)"
+      value={d.key}
+      onChange={(e) => updateProductDetail(i, "key", e.target.value)}
+    />
+    <input
+      placeholder="Value (e.g. Cotton)"
+      value={d.value}
+      onChange={(e) => updateProductDetail(i, "value", e.target.value)}
+    />
+    <button
+      style={{ background: "#ef4444", color: "#fff", borderRadius: "6px" }}
+      onClick={() => removeProductDetail(i)}
+    >
+      ✕
+    </button>
+  </div>
+))}
+
+<button className="add-variant-btn" onClick={addProductDetail}>
+  + Add Product Detail
+</button>
+
 
             <div className="upload-section">
               <label className="custom-upload">
@@ -355,62 +446,327 @@ export default function AdminInventory() {
                   <input placeholder="Stock" type="number" value={v.stock} onChange={(e) => updateVariant(i, "stock", e.target.value)} />
                 </div>
               ))}
-              <button className="add-variant-btn" onClick={addVariant}>
-                + Add Variant
-              </button>
+              <button className="add-variant-btn" onClick={addVariant}>+ Add Variant</button>
             </div>
 
-            <button className="save-btn" onClick={saveProduct}>
-              Save Product
-            </button>
+<button className="save-btn" onClick={saveProduct}>
+  {editingProduct ? "Update Product" : "Save Product"}
+</button>
           </div>
         </div>
       )}
 
-      
+<style>{`
+/* ======= GLOBAL ======= */
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* prevent horizontal scroll */
+  font-family: sans-serif;
+  background: #f8fafc;
+}
 
-      <style>{`
-        .admin { padding: 15px; max-width: 1200px; margin: 0 auto; font-family: sans-serif; background: #f8fafc; min-height: 100vh; }
-        h1 { color: #0b5ed7; text-align: center; font-size: 1.5rem; }
-        .add-category { display: flex; gap: 8px; margin-bottom: 20px; }
-        .add-category input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        .add-category button { background: #0b5ed7; color: #fff; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; }
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .category-card { background: #fff; padding: 15px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); cursor: pointer; font-weight: bold; }
+body.modal-open {
+  overflow: hidden; /* freeze page when modal open */
+  position: relative;
+}
 
-        .category-filter { margin-bottom: 15px; }
-        .category-filter select { padding: 6px 10px; border-radius: 6px; border: 1px solid #ddd; }
+/* ======= PAGE ======= */
+.admin {
+  padding: 15px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
 
-        .table-wrapper { width: 100%; overflow-x: auto; background: #fff; border-radius: 12px; margin-top: 20px; -webkit-overflow-scrolling: touch; }
-        .product-table { width: 100%; min-width: 800px; border-collapse: collapse; }
-        .product-table th, .product-table td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-        .mini-main { width: 45px; height: 45px; object-fit: cover; border-radius: 6px; }
-        .thumbs img { width: 30px; height: 30px; margin-right: 4px; border-radius: 4px; }
-        .variant-tag { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 11px; display: inline-block; margin: 2px; }
-        .action-cells { display: flex; gap: 5px; }
+h1 {
+  color: #0b5ed7;
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
 
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; }
-        .modal-box { background: #fff; width: 95%; max-width: 650px; max-height: 85vh; padding: 20px; border-radius: 16px; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 15px; }
-        .close-x { font-size: 30px; border: none; background: none; cursor: pointer; color: #666; }
-        .full-input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-        .custom-upload { display: block; background: #f8fafc; padding: 10px; text-align: center; border: 1px dashed #0b5ed7; border-radius: 8px; cursor: pointer; color: #0b5ed7; font-size: 14px; }
-        .preview-img-main { width: 50px; height: 50px; object-fit: cover; margin-top: 10px; border-radius: 6px; }
-        .thumb-preview img { width: 35px; height: 35px; margin-right: 4px; border-radius: 4px; object-fit: cover; }
-        .variant-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; }
-        .variant-row input, .variant-row select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%; box-sizing: border-box; }
-        .add-variant-btn { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #0b5ed7; color: #0b5ed7; background: #fff; border-radius: 8px; font-weight: bold; }
-        .save-btn { width: 100%; padding: 14px; background: #0b5ed7; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
+/* ======= CATEGORY ======= */
+.add-category {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
 
-        @media (max-width: 768px) {
-          .modal-overlay { align-items: flex-end; }
-          .modal-box { border-radius: 20px 20px 0 0; width: 100%; max-height: 90vh; }
-          .upload-section { grid-template-columns: 1fr; }
-          .variant-row { grid-template-columns: 1fr 1fr; }
-          .action-cells { flex-direction: column; }
-        }
-      `}</style>
+.add-category input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.add-category button {
+  background: #0b5ed7;
+  color: #fff;
+  border: none;
+  padding: 0 15px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.category-card {
+  background: #fff;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.category-filter {
+  margin-bottom: 15px;
+}
+
+.category-filter select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+/* ======= ALERTS ======= */
+.alerts-container > div {
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  font-weight: bold;
+  color: #000;
+}
+
+/* ======= TABLE ======= */
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto; /* horizontal scroll only inside wrapper */
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  background: #fff;
+  border-radius: 12px;
+  margin-top: 20px;
+  box-sizing: border-box;
+}
+
+.product-table {
+  width: max-content;
+  border-collapse: collapse;
+  table-layout: auto;
+  min-width: 100%;
+}
+
+.product-table th,
+.product-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  vertical-align: middle;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.mini-main {
+  width: 45px;
+  height: 45px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.thumbs img {
+  width: 25px;
+  height: 25px;
+  margin-right: 4px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.variant-tag {
+  display: inline-block;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  margin: 2px 2px 2px 0;
+  font-weight: bold;
+}
+
+.action-cells {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ======= MODAL ======= */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.modal-box {
+  background: #fff;
+  width: 95%;
+  max-width: 650px;
+  max-height: 90vh;
+  padding: 20px;
+  border-radius: 16px;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+.close-x {
+  font-size: 30px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #666;
+}
+
+.full-input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 16px;
+}
+
+/* ======= UPLOAD ======= */
+.upload-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.custom-upload {
+  display: block;
+  background: #f8fafc;
+  padding: 10px;
+  text-align: center;
+  border: 1px dashed #0b5ed7;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #0b5ed7;
+  font-size: 14px;
+}
+
+.preview-img-main {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  margin-top: 10px;
+  border-radius: 6px;
+}
+
+.thumb-preview img {
+  width: 35px;
+  height: 35px;
+  margin-right: 4px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+/* ======= VARIANTS ======= */
+.variant-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.variant-row input,
+.variant-row select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.add-variant-btn {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: 2px solid #0b5ed7;
+  color: #0b5ed7;
+  background: #fff;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+.save-btn {
+  width: 100%;
+  padding: 14px;
+  background: #0b5ed7;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* ======= MOBILE ======= */
+@media (max-width: 768px) {
+  .modal-box {
+    max-height: 90vh;
+    width: 100%;
+    padding: 15px;
+  }
+  .upload-section { grid-template-columns: 1fr; }
+  .variant-row { grid-template-columns: 1fr 1fr; }
+  .action-cells { flex-direction: column; gap: 6px; }
+  .mini-main { width: 35px; height: 35px; }
+  .thumbs img { width: 25px; height: 25px; }
+  .variant-tag { font-size: 10px; max-width: 70px; padding: 2px 4px; }
+  .product-table th,
+  .product-table td { font-size: 12px; padding: 8px; }
+  .table-wrapper { overflow-x: auto; }
+  .product-table { min-width: unset; width: max-content; display: block; }
+}
+`}</style>
+
+
+
     </div>
   );
 }
