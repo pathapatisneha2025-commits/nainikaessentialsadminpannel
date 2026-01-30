@@ -552,7 +552,7 @@ h1 {
 /* ======= TABLE ======= */
 .table-wrapper {
   width: 100%;
-  overflow-x: auto; /* horizontal scroll */
+
   overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
