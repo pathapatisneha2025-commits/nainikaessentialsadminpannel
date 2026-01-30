@@ -597,10 +597,9 @@ h1 {
 
 .variant-tag {
   display: inline-block;
-  max-width: 80px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;        /* let it use the available width */
+  white-space: normal;    /* allow wrapping */
+  word-break: break-word; /* break long words */
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
@@ -608,6 +607,7 @@ h1 {
   margin: 2px 2px 2px 0;
   font-weight: bold;
 }
+
 
 .action-cells {
   display: flex;
