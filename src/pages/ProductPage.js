@@ -461,13 +461,13 @@ const removeProductDetail = (i) => {
 html, body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden; /* prevent horizontal scroll */
+  overflow-x: hidden;
   font-family: sans-serif;
   background: #f8fafc;
 }
 
 body.modal-open {
-  overflow: hidden; /* freeze page when modal open */
+  overflow: hidden;
   position: relative;
 }
 
@@ -551,7 +551,7 @@ h1 {
 /* ======= TABLE ======= */
 .table-wrapper {
   width: 100%;
-  overflow-x: auto; /* horizontal scroll only inside wrapper */
+  overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
@@ -562,10 +562,9 @@ h1 {
 }
 
 .product-table {
-  width: max-content;
+  width: 100%;
   border-collapse: collapse;
   table-layout: auto;
-  min-width: 100%;
 }
 
 .product-table th,
@@ -747,22 +746,30 @@ h1 {
 
 /* ======= MOBILE ======= */
 @media (max-width: 768px) {
-  .modal-box {
-    max-height: 90vh;
-    width: 100%;
-    padding: 15px;
-  }
+  .modal-box { max-height: 90vh; width: 100%; padding: 15px; }
   .upload-section { grid-template-columns: 1fr; }
   .variant-row { grid-template-columns: 1fr 1fr; }
   .action-cells { flex-direction: column; gap: 6px; }
   .mini-main { width: 35px; height: 35px; }
   .thumbs img { width: 25px; height: 25px; }
   .variant-tag { font-size: 10px; max-width: 70px; padding: 2px 4px; }
-  .product-table th,
-  .product-table td { font-size: 12px; padding: 8px; }
+
+  /* ===== TABLE FIX ===== */
   .table-wrapper { overflow-x: auto; }
-  .product-table { min-width: unset; width: max-content; display: block; }
+  .product-table {
+    display: table;      /* restore table layout */
+    width: 100%;         /* fill wrapper */
+    min-width: 600px;    /* optional: prevent shrinking too much */
+    table-layout: auto;
+  }
+  .product-table th,
+  .product-table td {
+    font-size: 12px;
+    padding: 8px;
+    white-space: nowrap;  /* keep variants inline */
+  }
 }
+
 `}</style>
 
 
