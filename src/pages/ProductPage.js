@@ -882,15 +882,36 @@ h1 {
 
 /* ======= MOBILE ======= */
 @media (max-width: 768px) {
+
+  /* Modal overlay */
   .modal-overlay {
-    padding: 10px;
+    padding: 5px;
+    align-items: flex-start;
+    justify-content: center;
     overflow-y: auto;
   }
+
   .modal-box {
-    width: 95%;
-    max-height: 90vh;
+    width: 100%;
+    max-width: 100%;
+    max-height: 95vh;
     padding: 15px;
+    border-radius: 12px;
     overflow-y: auto;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+  }
+
+  .modal-header h3 {
+    font-size: 1rem;
+  }
+
+  .close-x {
+    font-size: 22px;
+  }
+
+  .full-input {
+    font-size: 14px;
+    padding: 10px;
   }
 
   .upload-section {
@@ -898,24 +919,51 @@ h1 {
     gap: 10px;
   }
 
-  .variant-row {
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  .preview-img-main {
+    width: 40px;
+    height: 40px;
   }
 
-  .variant-tag {
-    font-size: 10px;
-    max-width: 100%;
-    overflow-wrap: break-word;
-    white-space: normal;
-    padding: 2px 4px;
+  .thumb-preview img {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Variant rows stack on mobile */
+  .variant-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .add-variant-btn,
+  .save-btn {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  /* Table scroll */
+  .table-wrapper {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 50vh;
+  }
+
+  .product-table {
+    min-width: 700px;
   }
 
   .product-table th,
   .product-table td {
     font-size: 12px;
-    padding: 6px;
-    white-space: nowrap;
-    word-break: normal;
+    padding: 6px 8px;
+  }
+
+  .variant-tag {
+    font-size: 10px;
+    padding: 2px 4px;
+    max-width: 100%;
+    word-break: break-word;
+    white-space: normal;
   }
 
   .mini-main {
@@ -934,33 +982,48 @@ h1 {
   }
 
   .category-grid {
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   }
 
   .add-category input {
-    padding: 10px;
     font-size: 14px;
+    padding: 8px;
   }
 
   .add-category button {
-    padding: 0 12px;
     font-size: 14px;
+    padding: 0 10px;
   }
-
-  .modal-header h3 {
-    font-size: 16px;
-  }
-
-  .close-x {
-    font-size: 24px;
-  }
-
-  .full-input {
-    font-size: 14px;
-    padding: 10px;
-  }
-   
+    .product-table {
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
 }
+
+.variant-row {
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+}
+
+.modal-box {
+  width: 95%;
+  max-width: 100%;
+  max-height: 95vh;
+  padding: 15px;
+}
+
+.mini-main, .thumbs img, .preview-img-main {
+  max-width: 100%;
+  height: auto;
+}
+
+
+  /* Alerts */
+  .alerts-container > div {
+    font-size: 12px;
+    padding: 6px;
+  }
+}
+
  
 }
 

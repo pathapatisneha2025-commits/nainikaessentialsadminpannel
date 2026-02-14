@@ -15,7 +15,6 @@ const BestSellersAdmin = () => {
   const [variants, setVariants] = useState([{ size: "", color: "", price: 0, stock: 0 }]);
   const [type, setType] = useState("bestseller");
 
-  // Dynamic product details state
   const [productDetails, setProductDetails] = useState([
     { key: "Brand", value: "" },
     { key: "Fabric", value: "" },
@@ -25,7 +24,10 @@ const BestSellersAdmin = () => {
     { key: "Made In", value: "" },
   ]);
 
-  // Fetch all products
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
   const fetchProducts = async () => {
     try {
       const res = await fetch("https://nainikaessentialsdatabas.onrender.com/bestseller/all");
@@ -37,11 +39,6 @@ const BestSellersAdmin = () => {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  // Load product for edit
   const loadForEdit = async (id) => {
     try {
       const res = await fetch(`https://nainikaessentialsdatabas.onrender.com/bestseller/${id}`);
@@ -56,19 +53,13 @@ const BestSellersAdmin = () => {
       setEditingId(id);
       setShowForm(true);
 
-      // Load existing product details or initialize empty array
       const details = data.product_details || [];
-      if (details.length > 0) {
-        setProductDetails(details.map(d => ({ key: d.label, value: d.value })));
-      } else {
-        setProductDetails([{ key: "", value: "" }]);
-      }
+      setProductDetails(details.length > 0 ? details.map(d => ({ key: d.label, value: d.value })) : [{ key: "", value: "" }]);
     } catch (err) {
       console.error(err);
     }
   };
 
-  // Delete product
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
     try {
@@ -80,20 +71,14 @@ const BestSellersAdmin = () => {
     }
   };
 
-  // Update a product detail
   const updateProductDetail = (index, field, value) => {
     const updated = [...productDetails];
     updated[index][field] = value;
     setProductDetails(updated);
   };
-
-  // Add a new empty product detail
   const addProductDetail = () => setProductDetails([...productDetails, { key: "", value: "" }]);
-
-  // Remove a product detail
   const removeProductDetail = (index) => setProductDetails(productDetails.filter((_, i) => i !== index));
 
-  // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData();
@@ -101,11 +86,7 @@ const BestSellersAdmin = () => {
     formData.append("category", category);
     formData.append("description", description);
     formData.append("discount", discount);
-
-    // Convert structured product details to backend format
-    const detailsJSON = productDetails.filter(d => d.key).map(d => ({ label: d.key, value: d.value }));
-    formData.append("product_details", JSON.stringify(detailsJSON));
-
+    formData.append("product_details", JSON.stringify(productDetails.filter(d => d.key).map(d => ({ label: d.key, value: d.value }))));
     formData.append("variants", JSON.stringify(variants));
     formData.append("type", type);
     if (mainImage) formData.append("mainImage", mainImage);
@@ -120,7 +101,6 @@ const BestSellersAdmin = () => {
       }
       if (!res.ok) throw new Error("Failed to submit form");
 
-      // Reset form
       setName(""); setCategory(""); setDescription(""); setDiscount(0);
       setProductDetails([{ key: "", value: "" }]);
       setMainImage(null); setThumbnails([]);
@@ -134,7 +114,6 @@ const BestSellersAdmin = () => {
     }
   };
 
-  // Variant handlers
   const handleVariantChange = (index, field, value) => {
     const updated = [...variants];
     updated[index][field] = value;
@@ -143,26 +122,45 @@ const BestSellersAdmin = () => {
   const addVariant = () => setVariants([...variants, { size: "", color: "", price: 0, stock: 0 }]);
   const removeVariant = (index) => setVariants(variants.filter((_, i) => i !== index));
 
-  // Styles
   const styles = {
     container: { padding: "20px", fontFamily: "Arial, sans-serif", backgroundColor: "#f0f4f8", color: "#0a3d62", minHeight: "100vh" },
     button: { backgroundColor: "#0a3d62", color: "white", border: "none", padding: "8px 16px", cursor: "pointer", borderRadius: "4px" },
     deleteButton: { backgroundColor: "#e74c3c", color: "white", border: "none", padding: "6px 12px", cursor: "pointer", borderRadius: "4px" },
-    table: { width: "100%", borderCollapse: "collapse", marginTop: "20px" },
+    table: { width: "100%", borderCollapse: "collapse", marginTop: "20px", tableLayout: "auto" },
     th: { backgroundColor: "#0a3d62", color: "white", padding: "10px", textAlign: "left" },
-    td: { border: "1px solid #ccc", padding: "8px", verticalAlign: "top" },
+    td: { border: "1px solid #ccc", padding: "8px", verticalAlign: "top", wordBreak: "break-word" },
     formContainer: { marginTop: "20px", padding: "20px", border: "1px solid #0a3d62", borderRadius: "6px", backgroundColor: "white" },
-    input: { padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "100%" },
+    input: { padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "100%", minWidth: "80px" },
     textarea: { padding: "6px", borderRadius: "4px", border: "1px solid #ccc", width: "100%" },
-    variantRow: { display: "flex", gap: "10px", marginBottom: "5px" },
+    variantRow: { display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "5px" },
+    detailRow: { display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "5px" },
     h2: { color: "#0a3d62" },
     h3: { color: "#0a3d62" },
     h4: { color: "#0a3d62" },
-    imageThumb: { width: "60px", height: "60px", objectFit: "cover", marginRight: "5px", borderRadius: "4px" }
+    imageThumb: { width: "50px", height: "50px", objectFit: "cover", marginRight: "5px", borderRadius: "4px", maxWidth: "100%" },
   };
 
   return (
     <div style={styles.container}>
+      {/* Responsive table styling */}
+      <style>
+        {`
+          @media (max-width: 768px) {
+            table { font-size: 12px; }
+            td, th { padding: 6px; }
+            img { width: 40px; height: 40px; object-fit: cover; }
+            input, textarea, select, button { font-size: 12px; padding: 6px; }
+          }
+          @media (max-width: 480px) {
+            table { font-size: 10px; }
+            td, th { padding: 4px; }
+            img { width: 30px; height: 30px; }
+            input, textarea, select, button { font-size: 10px; padding: 4px; }
+          }
+          pre { white-space: pre-wrap; word-break: break-word; margin: 0; }
+        `}
+      </style>
+
       <h2 style={styles.h2}>Product Admin Panel</h2>
       <button style={styles.button} onClick={() => { setShowForm(true); setEditingId(null); }}>Add New Product</button>
 
@@ -177,19 +175,9 @@ const BestSellersAdmin = () => {
 
             <h4 style={styles.h4}>Product Details</h4>
             {productDetails.map((d, i) => (
-              <div key={i} style={{ display: "flex", gap: "10px", marginBottom: "5px" }}>
-                <input
-                  style={styles.input}
-                  placeholder="Label"
-                  value={d.key}
-                  onChange={e => updateProductDetail(i, "key", e.target.value)}
-                />
-                <input
-                  style={styles.input}
-                  placeholder="Value"
-                  value={d.value}
-                  onChange={e => updateProductDetail(i, "value", e.target.value)}
-                />
+              <div key={i} style={styles.detailRow}>
+                <input style={styles.input} placeholder="Label" value={d.key} onChange={e => updateProductDetail(i, "key", e.target.value)} />
+                <input style={styles.input} placeholder="Value" value={d.value} onChange={e => updateProductDetail(i, "value", e.target.value)} />
                 <button type="button" style={styles.deleteButton} onClick={() => removeProductDetail(i)}>Remove</button>
               </div>
             ))}
@@ -217,16 +205,14 @@ const BestSellersAdmin = () => {
             ))}
             <button type="button" style={styles.button} onClick={addVariant}>Add Variant</button>
 
-<button type="submit" style={styles.button}>
-  {editingId ? "Update Product" : "Add Product"}
-</button>
+            <button type="submit" style={styles.button}>{editingId ? "Update Product" : "Add Product"}</button>
             <button type="button" style={{ ...styles.button, backgroundColor: "#7f8c8d" }} onClick={() => setShowForm(false)}>Cancel</button>
           </form>
         </div>
       )}
 
-      <div>
-        <h3 style={styles.h3}>Existing Products</h3>
+      {/* Table */}
+      <div style={{ overflowX: "auto", marginTop: "20px" }}>
         {products.length === 0 ? <p>No products found.</p> : (
           <table style={styles.table}>
             <thead>
@@ -237,7 +223,7 @@ const BestSellersAdmin = () => {
                 <th style={styles.th}>Type</th>
                 <th style={styles.th}>Discount</th>
                 <th style={styles.th}>Description</th>
-                <th style={styles.th}>Product Details</th>
+                <th style={styles.th}>Details</th>
                 <th style={styles.th}>Main Image</th>
                 <th style={styles.th}>Thumbnails</th>
                 <th style={styles.th}>Variants</th>
@@ -256,13 +242,9 @@ const BestSellersAdmin = () => {
                   <td style={styles.td}><pre>{JSON.stringify(p.product_details, null, 2)}</pre></td>
                   <td style={styles.td}>{p.main_image && <img src={p.main_image} alt="main" style={styles.imageThumb} />}</td>
                   <td style={styles.td}>{p.thumbnails?.map((t, idx) => <img key={idx} src={t} alt="thumb" style={styles.imageThumb} />)}</td>
-                  <td style={styles.td}>
-                    {p.variants?.map((v, idx) => (
-                      <div key={idx}>
-                        Size: {v.size}, Color: {v.color}, Price: ₹{v.price}, Stock: {v.stock}
-                      </div>
-                    ))}
-                  </td>
+                  <td style={styles.td}>{p.variants?.map((v, idx) => (
+                    <div key={idx}>Size: {v.size}, Color: {v.color}, Price: ₹{v.price}, Stock: {v.stock}</div>
+                  ))}</td>
                   <td style={styles.td}>
                     <button style={styles.button} onClick={() => loadForEdit(p.id)}>Edit</button>
                     <button style={{ ...styles.deleteButton, marginLeft: "10px" }} onClick={() => handleDelete(p.id)}>Delete</button>

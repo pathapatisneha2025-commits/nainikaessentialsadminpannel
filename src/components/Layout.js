@@ -68,7 +68,7 @@ export default function AdminLayout() {
     },
       {
       id: "contact",
-      label: "Customermessages",
+      label: "Customer messages",
       icon: <LuMail size={18} />,
       path: "/admin/contact"
     },
